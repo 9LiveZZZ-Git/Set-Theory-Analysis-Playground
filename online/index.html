@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Theory Analysis | Allen Forte Pitch Class Sets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-tertiary: #1a1a24;
+            --bg-elevated: #22222e; --bg-hover: #2a2a38;
+            --text-primary: #f0f0f5; --text-secondary: #a0a0b0; --text-muted: #606070;
+            --accent-primary: #7c9fff; --accent-secondary: #ff7c9f; --accent-tertiary: #9fff7c;
+            --border-subtle: rgba(255, 255, 255, 0.06); --border-medium: rgba(255, 255, 255, 0.12);
+            --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+            --transition-fast: 0.15s ease; --transition-medium: 0.25s ease;
+            --left-panel-width: 320px; --right-panel-width: 360px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(124, 159, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 159, 255, 0.02) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+        .header { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: rgba(10, 10, 15, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; }
+        .logo-text { font-weight: 600; font-size: 18px; letter-spacing: -0.02em; }
+        .logo-text span { color: var(--text-muted); font-weight: 400; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .main-container { display: flex; height: 100vh; padding-top: 56px; position: relative; z-index: 1; }
+        .panel { background: var(--bg-secondary); border: 1px solid var(--border-subtle); overflow: hidden; display: flex; flex-direction: column; transition: width 0.3s ease, min-width 0.3s ease; position: relative; }
+        .panel-toggle { position: absolute; top: 50%; transform: translateY(-50%); width: 24px; height: 60px; background: var(--bg-tertiary); border: 1px solid var(--border-medium); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); z-index: 50; }
+        .panel-toggle:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--accent-primary); }
+        .panel-toggle svg { transition: transform 0.3s ease; }
+        .left-toggle { right: -24px; border-radius: 0 var(--radius-md) var(--radius-md) 0; border-left: none; }
+        .right-toggle { left: -24px; border-radius: var(--radius-md) 0 0 var(--radius-md); border-right: none; }
+        .left-panel { width: var(--left-panel-width); min-width: var(--left-panel-width); border-right: 1px solid var(--border-subtle); }
+        .left-panel.collapsed { width: 0; min-width: 0; border-right: none; }
+        .left-panel.collapsed .panel-content, .left-panel.collapsed .panel-header { opacity: 0; pointer-events: none; }
+        .left-panel.collapsed .left-toggle svg { transform: rotate(180deg); }
+        .right-panel { width: var(--right-panel-width); min-width: var(--right-panel-width); border-left: 1px solid var(--border-subtle); }
+        .right-panel.collapsed { width: 0; min-width: 0; border-left: none; }
+        .right-panel.collapsed .panel-content, .right-panel.collapsed .tabs { opacity: 0; pointer-events: none; }
+        .right-panel.collapsed .right-toggle svg { transform: rotate(180deg); }
+        .center-panel { flex: 1; display: flex; flex-direction: column; background: var(--bg-primary); position: relative; min-width: 0; }
+        .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; background: var(--bg-tertiary); }
+        .panel-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+        .panel-content { flex: 1; overflow-y: auto; padding: 20px; transition: opacity 0.3s ease; }
+        .input-section { margin-bottom: 24px; }
+        .input-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; display: block; }
+        .pitch-input { width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--text-primary); transition: all var(--transition-fast); }
+        .pitch-input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(124, 159, 255, 0.15); }
+        .pitch-input::placeholder { color: var(--text-muted); }
+        .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+        .piano-keyboard { display: flex; position: relative; height: 100px; margin: 16px 0; user-select: none; }
+        .piano-key { position: relative; cursor: pointer; transition: all var(--transition-fast); }
+        .piano-key.white { flex: 1; background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); border: 1px solid #ccc; border-radius: 0 0 var(--radius-sm) var(--radius-sm); z-index: 1; }
+        .piano-key.black { position: absolute; width: 24px; height: 60%; background: linear-gradient(180deg, #333 0%, #111 100%); border-radius: 0 0 var(--radius-sm) var(--radius-sm); z-index: 2; transform: translateX(-50%); }
+        .piano-key.white:hover { background: linear-gradient(180deg, #f0f0ff 0%, #dde 100%); }
+        .piano-key.black:hover { background: linear-gradient(180deg, #444 0%, #222 100%); }
+        .piano-key.active.white { background: linear-gradient(180deg, var(--accent-primary) 0%, #5a7fdd 100%); }
+        .piano-key.active.black { background: linear-gradient(180deg, var(--accent-secondary) 0%, #dd5a7f 100%); }
+        .piano-key .key-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 500; color: #666; }
+        .piano-key.black .key-label { color: #888; }
+        .piano-key.active .key-label { color: #fff; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: var(--radius-md); font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); border: none; outline: none; }
+        .btn-primary { background: var(--accent-primary); color: #000; }
+        .btn-primary:hover { background: #9ab4ff; transform: translateY(-1px); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-medium); }
+        .btn-secondary:hover { background: var(--bg-hover); border-color: var(--accent-primary); }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .operation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+        .op-btn { padding: 12px 8px; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); }
+        .op-btn:hover { background: var(--bg-hover); border-color: var(--accent-primary); }
+        .op-btn.active { background: var(--accent-primary); color: #000; border-color: var(--accent-primary); }
+        .transform-select { display: flex; gap: 4px; margin-top: 8px; }
+        .transform-n-btn { flex: 1; padding: 6px 2px; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 10px; cursor: pointer; transition: all var(--transition-fast); }
+        .transform-n-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .transform-n-btn.selected { background: var(--accent-primary); color: #000; border-color: var(--accent-primary); }
+        .recent-sets { margin-top: 24px; }
+        .recent-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 8px; cursor: pointer; transition: all var(--transition-fast); }
+        .recent-item:hover { background: var(--bg-hover); }
+        .recent-item-pcs { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+        .recent-item-forte { font-size: 12px; color: var(--text-secondary); }
+        .visualization-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 400px; }
+        .viz-mode-switcher { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; background: var(--bg-secondary); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
+        .viz-mode-btn { padding: 8px 16px; background: transparent; border: none; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); }
+        .viz-mode-btn:hover { color: var(--text-primary); }
+        .viz-mode-btn.active { background: var(--accent-primary); color: #000; }
+        .analysis-bar { background: var(--bg-secondary); border-top: 1px solid var(--border-subtle); padding: 16px 24px; display: flex; align-items: center; justify-content: center; gap: 32px; flex-wrap: wrap; }
+        .analysis-item { display: flex; flex-direction: column; gap: 4px; }
+        .analysis-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+        .analysis-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--text-primary); }
+        .analysis-value.forte { color: var(--accent-primary); font-weight: 600; }
+        .analysis-value.iv { color: var(--accent-tertiary); }
+        .tabs { display: flex; border-bottom: 1px solid var(--border-subtle); transition: opacity 0.3s ease; }
+        .tab { flex: 1; padding: 14px; background: transparent; border: none; color: var(--text-secondary); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all var(--transition-fast); position: relative; }
+        .tab:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .tab.active { color: var(--accent-primary); }
+        .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent-primary); }
+        .tab-content { display: none; padding: 16px; }
+        .tab-content.active { display: block; }
+        .transform-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .transform-mini { aspect-ratio: 1; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; position: relative; overflow: hidden; transition: all var(--transition-fast); }
+        .transform-mini:hover { border-color: var(--accent-primary); transform: scale(1.02); }
+        .transform-mini canvas { width: 100%; height: 100%; }
+        .transform-mini-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); background: var(--bg-secondary); padding: 2px 6px; border-radius: var(--radius-sm); }
+        .subset-section { margin-bottom: 20px; }
+        .subset-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+        .subset-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+        .subset-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-tertiary); border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition-fast); }
+        .subset-item:hover { background: var(--bg-hover); }
+        .subset-pcs { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .subset-forte { font-size: 11px; color: var(--accent-primary); }
+        .forte-filter { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+        .forte-filter-btn { padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all var(--transition-fast); }
+        .forte-filter-btn:hover { background: var(--bg-hover); }
+        .forte-filter-btn.active { background: var(--accent-primary); color: #000; border-color: var(--accent-primary); }
+        .forte-list { max-height: 400px; overflow-y: auto; }
+        .forte-item { display: grid; grid-template-columns: 50px 1fr 80px; align-items: center; padding: 10px 12px; background: var(--bg-tertiary); border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; transition: all var(--transition-fast); }
+        .forte-item:hover { background: var(--bg-hover); }
+        .forte-number { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent-primary); }
+        .forte-prime { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); }
+        .forte-iv { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
+        .example-list { max-height: 400px; overflow-y: auto; }
+        .example-item { padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 8px; cursor: pointer; transition: all var(--transition-fast); }
+        .example-item:hover { background: var(--bg-hover); }
+        .example-name { font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+        .example-composer { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+        .example-pcs { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-primary); }
+        .audio-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: var(--bg-elevated); padding: 8px 16px; border-radius: var(--radius-xl); border: 1px solid var(--border-medium); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); z-index: 50; }
+        .audio-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); color: var(--text-primary); cursor: pointer; transition: all var(--transition-fast); }
+        .audio-btn:hover { background: var(--bg-hover); border-color: var(--accent-primary); }
+        .audio-btn.playing { background: var(--accent-primary); color: #000; }
+        .audio-engine-select { padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 12px; cursor: pointer; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity var(--transition-medium); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--bg-secondary); border-radius: var(--radius-xl); border: 1px solid var(--border-medium); width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; transform: scale(0.95) translateY(20px); transition: transform var(--transition-medium); }
+        .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .modal-close { width: 32px; height: 32px; border-radius: var(--radius-md); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast); }
+        .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .modal-content { padding: 24px; overflow-y: auto; max-height: calc(80vh - 80px); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .hidden { display: none !important; }
+        @media (max-width: 1200px) { :root { --left-panel-width: 280px; --right-panel-width: 320px; } }
+        @media (max-width: 900px) { .left-panel, .right-panel { position: fixed; top: 56px; bottom: 0; z-index: 90; } .left-panel { left: 0; } .right-panel { right: 0; } .analysis-bar { flex-wrap: wrap; gap: 16px; } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo"><div class="logo-icon">PC</div><div class="logo-text">Set Theory <span>Analysis</span></div></div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="examples-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Examples</button>
+            <button class="btn btn-secondary" id="forte-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Forte Directory</button>
+            <button class="btn btn-secondary" id="export-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export MIDI</button>
+        </div>
+    </header>
+    <main class="main-container">
+        <aside class="panel left-panel" id="left-panel">
+            <button class="panel-toggle left-toggle" id="left-toggle" title="Toggle Input Panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+            <div class="panel-header"><span class="panel-title">Pitch Class Input</span></div>
+            <div class="panel-content">
+                <div class="input-section"><label class="input-label">Enter Pitch Classes</label><input type="text" class="pitch-input" id="pitch-input" placeholder="0 4 7 or C E G or 3-11" autocomplete="off"><p class="input-hint">Space/comma separated numbers (0-11), note names, or Forte number</p></div>
+                <div class="input-section"><label class="input-label">Click to Toggle</label><div class="piano-keyboard" id="piano-keyboard"></div></div>
+                <div class="input-section"><label class="input-label">Transformations</label><div class="operation-grid"><button class="op-btn" id="op-transpose">T<sub>n</sub></button><button class="op-btn" id="op-invert">I<sub>n</sub></button><button class="op-btn" id="op-retrograde">R</button></div><div id="transform-n-selector" class="transform-select hidden"></div></div>
+                <div class="input-section"><label class="input-label">Quick Actions</label><div class="btn-group"><button class="btn btn-secondary" id="clear-btn">Clear</button><button class="btn btn-secondary" id="complement-btn">Complement</button><button class="btn btn-secondary" id="prime-btn">Prime Form</button></div></div>
+                <div class="recent-sets"><label class="input-label">Recent Sets</label><div id="recent-sets-list"></div></div>
+            </div>
+        </aside>
+        <section class="center-panel">
+            <div class="visualization-container"><div class="viz-mode-switcher"><button class="viz-mode-btn active" data-mode="clock">Clock</button><button class="viz-mode-btn" data-mode="graph">Graph</button></div><div id="visualization-canvas"></div></div>
+            <div class="analysis-bar">
+                <div class="analysis-item"><span class="analysis-label">Prime Form</span><span class="analysis-value" id="analysis-prime">[0]</span></div>
+                <div class="analysis-item"><span class="analysis-label">Forte Number</span><span class="analysis-value forte" id="analysis-forte">1-1</span></div>
+                <div class="analysis-item"><span class="analysis-label">Interval Vector</span><span class="analysis-value iv" id="analysis-iv">&lt;000000&gt;</span></div>
+                <div class="analysis-item"><span class="analysis-label">Cardinality</span><span class="analysis-value" id="analysis-card">1</span></div>
+                <div class="analysis-item"><span class="analysis-label">Z-Partner</span><span class="analysis-value" id="analysis-z">None</span></div>
+            </div>
+        </section>
+        <aside class="panel right-panel" id="right-panel">
+            <button class="panel-toggle right-toggle" id="right-toggle" title="Toggle Analysis Panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></button>
+            <div class="tabs"><button class="tab active" data-tab="transforms">Transforms</button><button class="tab" data-tab="subsets">Subsets</button><button class="tab" data-tab="similar">Similar</button></div>
+            <div class="panel-content">
+                <div class="tab-content active" id="tab-transforms"><div class="subset-title">Transpositions (T₀-T₁₁)</div><div class="transform-grid" id="transposition-grid"></div><div class="subset-title" style="margin-top: 20px;">Inversions (I₀-I₁₁)</div><div class="transform-grid" id="inversion-grid"></div></div>
+                <div class="tab-content" id="tab-subsets"><div class="subset-section"><div class="subset-title">Subsets</div><div class="subset-list" id="subsets-list"></div></div><div class="subset-section"><div class="subset-title">Supersets</div><div class="subset-list" id="supersets-list"></div></div></div>
+                <div class="tab-content" id="tab-similar"><div class="subset-section"><div class="subset-title">Sets with Same Interval Vector</div><div class="subset-list" id="similar-list"></div></div></div>
+            </div>
+        </aside>
+    </main>
+    <div class="audio-controls">
+        <button class="audio-btn" id="play-chord-btn" title="Play as Chord"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg></button>
+        <button class="audio-btn" id="play-arp-btn" title="Play Arpeggiated"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg></button>
+        <button class="audio-btn" id="stop-btn" title="Stop"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg></button>
+        <select class="audio-engine-select" id="audio-engine-select"><option value="webaudio">Web Audio</option></select>
+    </div>
+    <div class="modal-overlay" id="forte-modal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Forte Directory</h2><button class="modal-close" data-close="forte-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content"><div class="forte-filter" id="forte-filter"></div><div class="forte-list" id="forte-list"></div></div></div></div>
+    <div class="modal-overlay" id="examples-modal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Music Examples</h2><button class="modal-close" data-close="examples-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content"><div class="example-list" id="examples-list"></div></div></div></div>
+<script>
+// ============ PITCH CLASS SET ============
+class PitchClassSet {
+    constructor(input) {
+        if (typeof input === 'string') this.pitchClasses = PitchClassSet.parseInput(input);
+        else if (Array.isArray(input)) this.pitchClasses = [...new Set(input.map(pc => ((pc % 12) + 12) % 12))].sort((a, b) => a - b);
+        else this.pitchClasses = [];
+        this.cardinality = this.pitchClasses.length;
+    }
+    static parseInput(input) {
+        input = input.trim();
+        if (/^\d+-\d+[A-Za-z]?$/.test(input)) {
+            const forteSet = ForteClassification.getSetFromForteNumber(input);
+            if (forteSet) return forteSet.pitchClasses;
+            return [];
+        }
+        const noteMap = {'c':0,'c#':1,'db':1,'d':2,'d#':3,'eb':3,'e':4,'fb':4,'e#':5,'f':5,'f#':6,'gb':6,'g':7,'g#':8,'ab':8,'a':9,'a#':10,'bb':10,'b':11,'cb':11,'b#':0};
+        const tokens = input.toLowerCase().split(/[\s,]+/).filter(t => t);
+        const pitchClasses = [];
+        for (const token of tokens) {
+            if (/^-?\d+$/.test(token)) pitchClasses.push(((parseInt(token) % 12) + 12) % 12);
+            else if (noteMap.hasOwnProperty(token)) pitchClasses.push(noteMap[token]);
+        }
+        return [...new Set(pitchClasses)].sort((a, b) => a - b);
+    }
+    transpose(n) { return new PitchClassSet(this.pitchClasses.map(pc => ((pc + n) % 12 + 12) % 12)); }
+    invert(n = 0) { return new PitchClassSet(this.pitchClasses.map(pc => ((n - pc) % 12 + 12) % 12)); }
+    normalForm() {
+        if (this.cardinality <= 1) return [...this.pitchClasses];
+        const rotations = [];
+        for (let i = 0; i < this.cardinality; i++) {
+            const rotation = [];
+            for (let j = 0; j < this.cardinality; j++) rotation.push(((this.pitchClasses[(i + j) % this.cardinality] - this.pitchClasses[i]) % 12 + 12) % 12);
+            rotations.push(rotation);
+        }
+        return rotations.reduce((best, current) => { for (let i = this.cardinality - 1; i >= 0; i--) { if (current[i] < best[i]) return current; if (current[i] > best[i]) return best; } return best; });
+    }
+    primeForm() {
+        if (this.cardinality === 0) return [];
+        const normalOriginal = this.normalForm(), normalInverted = this.invert(0).normalForm();
+        for (let i = this.cardinality - 1; i >= 0; i--) { if (normalInverted[i] < normalOriginal[i]) return normalInverted; if (normalInverted[i] > normalOriginal[i]) return normalOriginal; }
+        return normalOriginal;
+    }
+    intervalVector() {
+        const iv = [0, 0, 0, 0, 0, 0];
+        for (let i = 0; i < this.cardinality; i++) for (let j = i + 1; j < this.cardinality; j++) { let interval = Math.abs(this.pitchClasses[j] - this.pitchClasses[i]); if (interval > 6) interval = 12 - interval; if (interval > 0) iv[interval - 1]++; }
+        return iv;
+    }
+    intervalVectorString() { return '<' + this.intervalVector().join('') + '>'; }
+    complement() { const comp = []; for (let i = 0; i < 12; i++) if (!this.pitchClasses.includes(i)) comp.push(i); return new PitchClassSet(comp); }
+    findSubsets(size) {
+        if (size < 0 || size > this.cardinality) return [];
+        const subsets = [], indices = Array.from({ length: size }, (_, i) => i);
+        while (indices[0] <= this.cardinality - size) {
+            subsets.push(new PitchClassSet(indices.map(i => this.pitchClasses[i])));
+            let i = size - 1; while (i >= 0 && indices[i] === this.cardinality - size + i) i--;
+            if (i < 0) break; indices[i]++; for (let j = i + 1; j < size; j++) indices[j] = indices[j - 1] + 1;
+        }
+        return subsets;
+    }
+    findSupersets(size) {
+        if (size < this.cardinality || size > 12) return [];
+        const remaining = []; for (let i = 0; i < 12; i++) if (!this.pitchClasses.includes(i)) remaining.push(i);
+        const toAdd = size - this.cardinality; if (toAdd > remaining.length) return [];
+        const supersets = [], indices = Array.from({ length: toAdd }, (_, i) => i);
+        while (indices[0] <= remaining.length - toAdd) {
+            supersets.push(new PitchClassSet([...this.pitchClasses, ...indices.map(i => remaining[i])]));
+            let i = toAdd - 1; while (i >= 0 && indices[i] === remaining.length - toAdd + i) i--;
+            if (i < 0) break; indices[i]++; for (let j = i + 1; j < toAdd; j++) indices[j] = indices[j - 1] + 1;
+        }
+        return supersets;
+    }
+}
+
+// ============ FORTE CLASSIFICATION ============
+const ForteClassification = {
+    FORTE_TABLE: {'0':'1-1','0,1':'2-1','0,2':'2-2','0,3':'2-3','0,4':'2-4','0,5':'2-5','0,6':'2-6','0,1,2':'3-1','0,1,3':'3-2','0,1,4':'3-3','0,1,5':'3-4','0,1,6':'3-5','0,2,4':'3-6','0,2,5':'3-7','0,2,6':'3-8','0,2,7':'3-9','0,3,6':'3-10','0,3,7':'3-11','0,4,8':'3-12','0,1,2,3':'4-1','0,1,2,4':'4-2','0,1,3,4':'4-3','0,1,2,5':'4-4','0,1,2,6':'4-5','0,1,2,7':'4-6','0,1,4,5':'4-7','0,1,5,6':'4-8','0,1,6,7':'4-9','0,2,3,5':'4-10','0,1,3,5':'4-11','0,2,3,6':'4-12','0,1,3,6':'4-13','0,2,3,7':'4-14','0,1,4,6':'4-Z15','0,1,5,7':'4-16','0,3,4,7':'4-17','0,1,4,7':'4-18','0,1,4,8':'4-19','0,1,5,8':'4-20','0,2,4,6':'4-21','0,2,4,7':'4-22','0,2,5,7':'4-23','0,2,4,8':'4-24','0,2,6,8':'4-25','0,3,5,8':'4-26','0,2,5,8':'4-27','0,3,6,9':'4-28','0,1,3,7':'4-Z29','0,1,2,3,4':'5-1','0,1,2,3,5':'5-2','0,1,2,4,5':'5-3','0,1,2,3,6':'5-4','0,1,2,3,7':'5-5','0,1,2,5,6':'5-6','0,1,2,6,7':'5-7','0,2,3,4,6':'5-8','0,1,2,4,6':'5-9','0,1,3,4,6':'5-10','0,2,3,4,7':'5-11','0,1,3,5,6':'5-Z12','0,1,2,4,8':'5-13','0,1,2,5,7':'5-14','0,1,2,6,8':'5-15','0,1,3,4,7':'5-16','0,1,3,4,8':'5-Z17','0,1,4,5,7':'5-Z18','0,1,3,6,7':'5-19','0,1,3,7,8':'5-20','0,1,4,5,8':'5-21','0,1,4,7,8':'5-22','0,2,3,5,7':'5-23','0,1,3,5,7':'5-24','0,2,3,5,8':'5-25','0,2,4,5,8':'5-26','0,1,3,5,8':'5-27','0,2,3,6,8':'5-28','0,1,3,6,8':'5-29','0,1,4,6,8':'5-30','0,1,3,6,9':'5-31','0,1,4,6,9':'5-32','0,2,4,6,8':'5-33','0,2,4,6,9':'5-34','0,2,4,7,9':'5-35','0,1,2,3,4,5':'6-1','0,1,2,3,4,6':'6-2','0,1,2,3,5,6':'6-Z3','0,1,2,4,5,6':'6-Z4','0,1,2,3,6,7':'6-5','0,1,2,5,6,7':'6-Z6','0,1,2,6,7,8':'6-7','0,2,3,4,5,7':'6-8','0,1,2,3,5,7':'6-9','0,1,3,4,5,7':'6-Z10','0,1,2,4,5,7':'6-Z11','0,1,2,4,6,7':'6-Z12','0,1,3,4,6,7':'6-Z13','0,1,3,4,5,8':'6-14','0,1,2,4,5,8':'6-15','0,1,4,5,6,8':'6-16','0,1,2,4,7,8':'6-Z17','0,1,2,5,7,8':'6-18','0,1,3,4,7,8':'6-Z19','0,1,4,5,8,9':'6-20','0,2,3,4,6,8':'6-21','0,1,2,4,6,8':'6-22','0,2,3,5,6,8':'6-Z23','0,1,3,4,6,8':'6-Z24','0,1,3,5,6,8':'6-Z25','0,1,3,5,7,8':'6-Z26','0,1,3,4,6,9':'6-27','0,1,3,5,6,9':'6-Z28','0,1,3,6,8,9':'6-Z29','0,1,3,6,7,9':'6-30','0,1,3,5,8,9':'6-31','0,2,4,5,7,9':'6-32','0,2,3,5,7,9':'6-33','0,1,3,5,7,9':'6-34','0,2,4,6,8,10':'6-35','0,1,2,3,4,5,6':'7-1','0,1,2,3,4,5,7':'7-2','0,1,2,3,4,5,8':'7-3','0,1,2,3,4,6,7':'7-4','0,1,2,3,5,6,7':'7-5','0,1,2,3,4,7,8':'7-6','0,1,2,3,6,7,8':'7-7','0,2,3,4,5,6,8':'7-8','0,1,2,3,4,6,8':'7-9','0,1,2,3,4,6,9':'7-10','0,1,3,4,5,6,8':'7-11','0,1,2,3,4,7,9':'7-Z12','0,1,2,4,5,6,8':'7-13','0,1,2,3,5,7,8':'7-14','0,1,2,4,6,7,8':'7-15','0,1,2,3,5,6,9':'7-16','0,1,2,4,5,6,9':'7-Z17','0,1,2,3,5,8,9':'7-Z18','0,1,2,3,6,7,9':'7-19','0,1,2,4,7,8,9':'7-20','0,1,2,4,5,8,9':'7-21','0,1,2,5,6,8,9':'7-22','0,2,3,4,5,7,9':'7-23','0,1,2,3,5,7,9':'7-24','0,2,3,4,6,7,9':'7-25','0,1,3,4,5,7,9':'7-26','0,1,2,4,5,7,9':'7-27','0,1,3,5,6,7,9':'7-28','0,1,2,4,6,7,9':'7-29','0,1,2,4,6,8,9':'7-30','0,1,3,4,6,7,9':'7-31','0,1,3,4,6,8,9':'7-32','0,1,2,4,6,8,10':'7-33','0,1,3,4,6,8,10':'7-34','0,1,3,5,6,8,10':'7-35','0,1,2,3,4,5,6,7':'8-1','0,1,2,3,4,5,6,8':'8-2','0,1,2,3,4,5,6,9':'8-3','0,1,2,3,4,5,7,8':'8-4','0,1,2,3,4,6,7,8':'8-5','0,1,2,3,5,6,7,8':'8-6','0,1,2,3,4,5,8,9':'8-7','0,1,2,3,4,7,8,9':'8-8','0,1,2,3,6,7,8,9':'8-9','0,2,3,4,5,6,7,9':'8-10','0,1,2,3,4,5,7,9':'8-11','0,1,3,4,5,6,7,9':'8-12','0,1,2,3,4,6,7,9':'8-13','0,1,2,4,5,6,7,9':'8-14','0,1,2,3,4,6,8,9':'8-Z15','0,1,2,3,5,7,8,9':'8-16','0,1,3,4,5,6,8,9':'8-17','0,1,2,3,5,6,8,9':'8-18','0,1,2,4,5,6,8,9':'8-19','0,1,2,4,5,7,8,9':'8-20','0,1,2,3,4,6,8,10':'8-21','0,1,2,3,5,6,8,10':'8-22','0,1,2,3,5,7,8,10':'8-23','0,1,2,4,5,6,8,10':'8-24','0,1,2,4,6,7,8,10':'8-25','0,1,2,4,5,7,9,10':'8-26','0,1,2,4,5,7,8,10':'8-27','0,1,3,4,6,7,9,10':'8-28','0,1,2,3,4,5,6,7,8':'9-1','0,1,2,3,4,5,6,7,9':'9-2','0,1,2,3,4,5,6,8,9':'9-3','0,1,2,3,4,5,7,8,9':'9-4','0,1,2,3,4,6,7,8,9':'9-5','0,1,2,3,5,6,7,8,9':'9-6','0,1,2,4,5,6,7,8,9':'9-7','0,1,2,3,4,5,6,8,10':'9-8','0,1,2,3,4,5,7,8,10':'9-9','0,1,2,3,4,6,7,8,10':'9-10','0,1,2,3,5,6,7,8,10':'9-11','0,1,2,4,5,6,7,8,10':'9-12','0,1,2,3,4,5,6,7,8,9':'10-1','0,1,2,3,4,5,6,7,8,10':'10-2','0,1,2,3,4,5,6,7,9,10':'10-3','0,1,2,3,4,5,6,8,9,10':'10-4','0,1,2,3,4,5,7,8,9,10':'10-5','0,1,2,3,4,6,7,8,9,10':'10-6','0,1,2,3,4,5,6,7,8,9,10':'11-1','0,1,2,3,4,5,6,7,8,9,10,11':'12-1'},
+    REVERSE_TABLE: null,
+    _initReverse() { if (this.REVERSE_TABLE) return; this.REVERSE_TABLE = {}; for (const [primeStr, forte] of Object.entries(this.FORTE_TABLE)) if (!this.REVERSE_TABLE[forte]) this.REVERSE_TABLE[forte] = primeStr.split(',').map(Number); },
+    getForteNumber(pcs) { if (!pcs || pcs.cardinality === 0) return null; return this.FORTE_TABLE[pcs.primeForm().join(',')] || null; },
+    getSetFromForteNumber(forteNumber) { this._initReverse(); const primeForm = this.REVERSE_TABLE[forteNumber]; return primeForm ? new PitchClassSet(primeForm) : null; },
+    getSetsByCardinality(cardinality) { this._initReverse(); const results = [], seen = new Set(); for (const [forte, primeForm] of Object.entries(this.REVERSE_TABLE)) if (primeForm.length === cardinality && !seen.has(forte)) { seen.add(forte); results.push({ forte, primeForm, iv: new PitchClassSet(primeForm).intervalVector() }); } return results.sort((a, b) => { const [aCard, aNum] = a.forte.replace('Z', '').split('-').map(Number); const [bCard, bNum] = b.forte.replace('Z', '').split('-').map(Number); return aCard - bCard || aNum - bNum; }); },
+    getZPartner(forteNumber) { if (!forteNumber || !forteNumber.includes('Z')) return null; const pcs = this.getSetFromForteNumber(forteNumber); if (!pcs) return null; const targetIV = JSON.stringify(pcs.intervalVector()); this._initReverse(); for (const [forte, primeForm] of Object.entries(this.REVERSE_TABLE)) if (forte !== forteNumber && JSON.stringify(new PitchClassSet(primeForm).intervalVector()) === targetIV) return forte; return null; },
+    findSimilarSets(forteNumber) { const pcs = this.getSetFromForteNumber(forteNumber); if (!pcs) return []; const targetIV = JSON.stringify(pcs.intervalVector()), similar = []; this._initReverse(); for (const [forte, primeForm] of Object.entries(this.REVERSE_TABLE)) if (forte !== forteNumber && JSON.stringify(new PitchClassSet(primeForm).intervalVector()) === targetIV) similar.push(forte); return similar; }
+};
+
+// ============ MUSIC EXAMPLES ============
+const MusicExamples = { examples: [{name:"Major Triad",composer:"Traditional",piece:"3-11",pitchClasses:[0,4,7]},{name:"Minor Triad",composer:"Traditional",piece:"3-11",pitchClasses:[0,3,7]},{name:"Diminished Triad",composer:"Traditional",piece:"3-10",pitchClasses:[0,3,6]},{name:"Augmented Triad",composer:"Traditional",piece:"3-12",pitchClasses:[0,4,8]},{name:"Dominant 7th",composer:"Traditional",piece:"4-27",pitchClasses:[0,4,7,10]},{name:"Major 7th",composer:"Traditional",piece:"4-20",pitchClasses:[0,4,7,11]},{name:"Diminished 7th",composer:"Traditional",piece:"4-28",pitchClasses:[0,3,6,9]},{name:"Major Scale",composer:"Traditional",piece:"7-35",pitchClasses:[0,2,4,5,7,9,11]},{name:"Whole Tone",composer:"Debussy",piece:"6-35",pitchClasses:[0,2,4,6,8,10]},{name:"Octatonic",composer:"Stravinsky",piece:"8-28",pitchClasses:[0,1,3,4,6,7,9,10]},{name:"Pentatonic",composer:"Traditional",piece:"5-35",pitchClasses:[0,2,4,7,9]},{name:"Tristan Chord",composer:"Wagner",piece:"4-27",pitchClasses:[0,3,6,10]},{name:"Mystic Chord",composer:"Scriabin",piece:"6-34",pitchClasses:[0,2,4,6,9,10]},{name:"Viennese Trichord",composer:"Schoenberg",piece:"3-3",pitchClasses:[0,1,4]}], getAll() { return this.examples; } };
+
+// ============ AUDIO ENGINE ============
+const audioEngine = {
+    audioContext: null, masterGain: null, activeOscillators: [], isPlaying: false,
+    settings: { baseOctave:4, velocity:0.5, attackTime:0.02, decayTime:0.1, sustainLevel:0.7, releaseTime:0.3, waveform:'triangle', arpeggioSpeed:150, chordDuration:1500, a4Frequency:440 },
+    async init() { if (!this.audioContext) { this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.audioContext.createGain(); this.masterGain.connect(this.audioContext.destination); this.masterGain.gain.value = this.settings.velocity; } if (this.audioContext.state === 'suspended') await this.audioContext.resume(); },
+    midiToFreq(midi) { return this.settings.a4Frequency * Math.pow(2, (midi - 69) / 12); },
+    createVoice(frequency, duration) { const osc = this.audioContext.createOscillator(), gain = this.audioContext.createGain(); osc.type = this.settings.waveform; osc.frequency.value = frequency; osc.connect(gain); gain.connect(this.masterGain); const now = this.audioContext.currentTime; gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(1, now + this.settings.attackTime); gain.gain.linearRampToValueAtTime(this.settings.sustainLevel, now + this.settings.attackTime + this.settings.decayTime); if (duration) { const releaseStart = now + duration - this.settings.releaseTime; gain.gain.setValueAtTime(this.settings.sustainLevel, releaseStart); gain.gain.linearRampToValueAtTime(0, releaseStart + this.settings.releaseTime); } return { osc, gain }; },
+    playChord(pcs, duration = null) { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; duration = duration || this.settings.chordDuration; this.init().then(() => { this.isPlaying = true; pitchClasses.forEach((pc, i) => { let octave = this.settings.baseOctave + (pitchClasses.length > 4 ? Math.floor(i / 4) : 0); const voice = this.createVoice(this.midiToFreq(pc + (octave + 1) * 12), duration / 1000); voice.osc.start(); voice.osc.stop(this.audioContext.currentTime + duration / 1000); this.activeOscillators.push(voice); }); setTimeout(() => { this.isPlaying = false; this.activeOscillators = []; }, duration + 100); }); },
+    playArpeggiated(pcs, noteLength = null) { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; noteLength = noteLength || this.settings.arpeggioSpeed; this.init().then(() => { this.isPlaying = true; pitchClasses.forEach((pc, i) => { setTimeout(() => { if (!this.isPlaying) return; let octave = this.settings.baseOctave + (pitchClasses.length > 6 ? Math.floor(i / 6) : 0); const voice = this.createVoice(this.midiToFreq(pc + (octave + 1) * 12), (noteLength * 2) / 1000); voice.osc.start(); voice.osc.stop(this.audioContext.currentTime + (noteLength * 2) / 1000); this.activeOscillators.push(voice); }, i * noteLength); }); setTimeout(() => { this.isPlaying = false; this.activeOscillators = []; }, pitchClasses.length * noteLength + noteLength * 2); }); },
+    stop() { this.isPlaying = false; const now = this.audioContext?.currentTime || 0; this.activeOscillators.forEach(voice => { try { voice.gain.gain.cancelScheduledValues(now); voice.gain.gain.setValueAtTime(voice.gain.gain.value, now); voice.gain.gain.linearRampToValueAtTime(0, now + 0.05); voice.osc.stop(now + 0.1); } catch (e) {} }); this.activeOscillators = []; },
+    downloadMIDI(pcs, filename = 'pitch-class-set.mid') { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; const tempo = 120, ticksPerBeat = 480, microsecondsPerBeat = Math.round(60000000 / tempo); const events = []; pitchClasses.forEach(pc => { const note = pc + (this.settings.baseOctave + 1) * 12; events.push({ type: 'noteOn', tick: 0, note, velocity: 100 }); events.push({ type: 'noteOff', tick: ticksPerBeat, note, velocity: 0 }); }); events.sort((a, b) => a.tick - b.tick); const toVLQ = (value) => { if (value === 0) return [0]; const bytes = []; bytes.unshift(value & 0x7F); let v = value >> 7; while (v > 0) { bytes.unshift((v & 0x7F) | 0x80); v >>= 7; } return bytes; }; const trackData = [0x00, 0xFF, 0x51, 0x03, (microsecondsPerBeat >> 16) & 0xFF, (microsecondsPerBeat >> 8) & 0xFF, microsecondsPerBeat & 0xFF]; let lastTick = 0; events.forEach(event => { trackData.push(...toVLQ(event.tick - lastTick)); lastTick = event.tick; trackData.push(event.type === 'noteOn' ? 0x90 : 0x80, event.note, event.type === 'noteOn' ? event.velocity : 0); }); trackData.push(0x00, 0xFF, 0x2F, 0x00); const header = new Uint8Array([0x4D, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0x01, 0xE0]); const track = new Uint8Array(8 + trackData.length); track.set([0x4D, 0x54, 0x72, 0x6B, (trackData.length >> 24) & 0xFF, (trackData.length >> 16) & 0xFF, (trackData.length >> 8) & 0xFF, trackData.length & 0xFF]); track.set(trackData, 8); const result = new Uint8Array(header.length + track.length); result.set(header, 0); result.set(track, header.length); const blob = new Blob([result], { type: 'audio/midi' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); }
+};
+
+// ============ VISUALIZATION ============
+const pcColors = ['#ff6b6b','#ff8e6b','#ffb86b','#ffe66b','#d4ff6b','#8eff6b','#6bffa8','#6bfff0','#6bd4ff','#6b8eff','#a86bff','#ff6be6'];
+const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+let vizSketch = null, currentVisualization = 'clock', currentSet = null, hoveredPc = -1, animationProgress = 0;
+
+function initVisualization() {
+    const container = document.getElementById('visualization-canvas');
+    if (!container) return;
+    if (vizSketch) vizSketch.remove();
+    vizSketch = new p5((sketch) => {
+        let width, height, centerX, centerY, radius;
+        sketch.setup = function() { const rect = container.getBoundingClientRect(); width = rect.width || 600; height = rect.height || 500; sketch.createCanvas(width, height).parent(container); centerX = width / 2; centerY = height / 2; radius = Math.min(width, height) * 0.35; sketch.textFont('JetBrains Mono, monospace'); sketch.textAlign(sketch.CENTER, sketch.CENTER); };
+        sketch.windowResized = function() { const rect = container.getBoundingClientRect(); width = rect.width || 600; height = rect.height || 500; sketch.resizeCanvas(width, height); centerX = width / 2; centerY = height / 2; radius = Math.min(width, height) * 0.35; };
+        sketch.draw = function() { sketch.clear(); animationProgress = sketch.lerp(animationProgress, 1, 0.1); if (currentVisualization === 'clock') drawClock(sketch, centerX, centerY, radius); else drawGraph(sketch, centerX, centerY, radius); };
+        sketch.mouseMoved = function() { hoveredPc = -1; for (let i = 0; i < 12; i++) { const angle = (i * 30 - 90) * Math.PI / 180; if (sketch.dist(sketch.mouseX, sketch.mouseY, centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius) < 20) { hoveredPc = i; break; } } };
+        sketch.mouseClicked = function() { if (currentVisualization !== 'clock') return; for (let i = 0; i < 12; i++) { const angle = (i * 30 - 90) * Math.PI / 180; if (sketch.dist(sketch.mouseX, sketch.mouseY, centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius) < 20) { togglePitchClass(i); break; } } };
+    });
+}
+
+function drawClock(sketch, cx, cy, r) {
+    const pitchClasses = currentSet?.pitchClasses || [];
+    sketch.noFill(); sketch.stroke(255, 255, 255, 30); sketch.strokeWeight(2); sketch.ellipse(cx, cy, r * 2.1, r * 2.1);
+    sketch.stroke(255, 255, 255, 10); sketch.strokeWeight(1);
+    for (let i = 0; i < 12; i++) { const angle = (i * 30 - 90) * Math.PI / 180; sketch.line(cx + Math.cos(angle) * r * 0.3, cy + Math.sin(angle) * r * 0.3, cx + Math.cos(angle) * r, cy + Math.sin(angle) * r); }
+    if (pitchClasses.length >= 2) { sketch.strokeWeight(2); for (let i = 0; i < pitchClasses.length; i++) for (let j = i + 1; j < pitchClasses.length; j++) { const angle1 = (pitchClasses[i] * 30 - 90) * Math.PI / 180, angle2 = (pitchClasses[j] * 30 - 90) * Math.PI / 180; let interval = Math.abs(pitchClasses[j] - pitchClasses[i]); if (interval > 6) interval = 12 - interval; const col = sketch.color(pcColors[pitchClasses[i]]); col.setAlpha((80 + interval * 20) * animationProgress); sketch.stroke(col); sketch.line(cx + Math.cos(angle1) * r * animationProgress, cy + Math.sin(angle1) * r * animationProgress, cx + Math.cos(angle2) * r * animationProgress, cy + Math.sin(angle2) * r * animationProgress); } }
+    for (let i = 0; i < 12; i++) { const angle = (i * 30 - 90) * Math.PI / 180, x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r, isActive = pitchClasses.includes(i), isHovered = hoveredPc === i; let nodeSize = isActive ? 36 : 24; if (isHovered) nodeSize += 4; if (isActive) { const glowCol = sketch.color(pcColors[i]); glowCol.setAlpha(50 * animationProgress); sketch.noStroke(); sketch.fill(glowCol); sketch.ellipse(x, y, nodeSize + 20, nodeSize + 20); sketch.fill(pcColors[i]); sketch.stroke(255, 255, 255, 100); sketch.strokeWeight(2); } else { sketch.fill(30, 30, 40); sketch.stroke(255, 255, 255, isHovered ? 100 : 40); sketch.strokeWeight(1); } sketch.ellipse(x, y, nodeSize, nodeSize); sketch.noStroke(); sketch.fill(isActive ? 0 : (isHovered ? 255 : 150)); sketch.textSize(isActive ? 13 : 11); sketch.text(noteNames[i], x, y); }
+    if (pitchClasses.length > 0) { sketch.fill(255, 255, 255, 200); sketch.textSize(14); sketch.text('{' + pitchClasses.join(', ') + '}', cx, cy - 10); const forte = currentSet ? ForteClassification.getForteNumber(currentSet) : null; if (forte) { sketch.fill(255, 255, 255, 100); sketch.textSize(11); sketch.text(forte, cx, cy + 10); } } else { sketch.fill(255, 255, 255, 50); sketch.textSize(12); sketch.text('Click nodes to add pitch classes', cx, cy); }
+}
+
+function drawGraph(sketch, cx, cy, r) {
+    const pitchClasses = currentSet?.pitchClasses || [];
+    if (pitchClasses.length === 0) { sketch.fill(255, 255, 255, 50); sketch.textSize(12); sketch.text('Enter a pitch class set', cx, cy); return; }
+    const nodePositions = pitchClasses.map((pc, i) => ({ pc, x: cx + Math.cos((i * (360 / pitchClasses.length) - 90) * Math.PI / 180) * r * 0.8 * animationProgress, y: cy + Math.sin((i * (360 / pitchClasses.length) - 90) * Math.PI / 180) * r * 0.8 * animationProgress }));
+    const intervalColors = ['#ff6b6b','#ff8e6b','#ffb86b','#ffe66b','#d4ff6b','#8eff6b','#6bffa8'];
+    sketch.strokeWeight(2); sketch.textSize(10);
+    for (let i = 0; i < nodePositions.length; i++) for (let j = i + 1; j < nodePositions.length; j++) { const n1 = nodePositions[i], n2 = nodePositions[j]; let interval = Math.abs(n2.pc - n1.pc); if (interval > 6) interval = 12 - interval; const col = sketch.color(intervalColors[interval] || '#ffffff'); col.setAlpha(120 * animationProgress); sketch.stroke(col); sketch.line(n1.x, n1.y, n2.x, n2.y); const midX = (n1.x + n2.x) / 2, midY = (n1.y + n2.y) / 2; sketch.noStroke(); sketch.fill(30, 30, 40); sketch.ellipse(midX, midY, 22, 22); sketch.fill(intervalColors[interval] || '#ffffff'); sketch.text(interval, midX, midY); }
+    nodePositions.forEach(node => { const glowCol = sketch.color(pcColors[node.pc]); glowCol.setAlpha(50 * animationProgress); sketch.noStroke(); sketch.fill(glowCol); sketch.ellipse(node.x, node.y, 56, 56); sketch.fill(pcColors[node.pc]); sketch.stroke(255, 255, 255, 150); sketch.strokeWeight(2); sketch.ellipse(node.x, node.y, 40, 40); sketch.noStroke(); sketch.fill(0); sketch.textSize(14); sketch.text(noteNames[node.pc], node.x, node.y); });
+    sketch.fill(255, 255, 255, 150); sketch.textSize(12); sketch.text('IV: <' + (currentSet?.intervalVector() || []).join('') + '>', cx, cy + r + 40);
+}
+
+function drawMiniClock(canvas, pitchClasses) {
+    const ctx = canvas.getContext('2d'), size = canvas.width, cx = size / 2, cy = size / 2, r = size * 0.35;
+    ctx.clearRect(0, 0, size, size);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    if (pitchClasses.length >= 2) { ctx.strokeStyle = 'rgba(124, 159, 255, 0.3)'; for (let i = 0; i < pitchClasses.length; i++) for (let j = i + 1; j < pitchClasses.length; j++) { const angle1 = (pitchClasses[i] * 30 - 90) * Math.PI / 180, angle2 = (pitchClasses[j] * 30 - 90) * Math.PI / 180; ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle1) * r, cy + Math.sin(angle1) * r); ctx.lineTo(cx + Math.cos(angle2) * r, cy + Math.sin(angle2) * r); ctx.stroke(); } }
+    for (let i = 0; i < 12; i++) { const angle = (i * 30 - 90) * Math.PI / 180, x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r, isActive = pitchClasses.includes(i); ctx.beginPath(); ctx.arc(x, y, isActive ? 4 : 2, 0, Math.PI * 2); ctx.fillStyle = isActive ? pcColors[i] : 'rgba(255, 255, 255, 0.3)'; ctx.fill(); }
+}
+
+function togglePitchClass(pc) {
+    if (!currentSet) currentSet = new PitchClassSet([pc]);
+    else { const pcs = [...currentSet.pitchClasses]; const idx = pcs.indexOf(pc); if (idx > -1) pcs.splice(idx, 1); else pcs.push(pc); currentSet = new PitchClassSet(pcs); }
+    document.getElementById('pitch-input').value = currentSet.pitchClasses.join(' ');
+    animationProgress = 0;
+    updateAnalysis(); updatePianoKeyboard(); updateTransformationGrids(); updateSubsetsPanel(); addToRecentSets(currentSet);
+}
+
+// ============ APPLICATION ============
+let recentSets = [], selectedOperation = null;
+
+document.addEventListener('DOMContentLoaded', () => { initVisualization(); buildPianoKeyboard(); buildTransformSelector(); buildForteDirectory(); buildMusicExamples(); setupEventListeners(); setCurrentSet(new PitchClassSet([0, 4, 7])); });
+
+function setupEventListeners() {
+    const pitchInput = document.getElementById('pitch-input');
+    pitchInput.addEventListener('input', debounce(handlePitchInput, 300));
+    pitchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handlePitchInput(); });
+    document.getElementById('examples-btn').addEventListener('click', () => showModal('examples-modal'));
+    document.getElementById('forte-btn').addEventListener('click', () => showModal('forte-modal'));
+    document.getElementById('export-btn').addEventListener('click', exportMIDI);
+    document.getElementById('play-chord-btn').addEventListener('click', playChord);
+    document.getElementById('play-arp-btn').addEventListener('click', playArpeggiated);
+    document.getElementById('stop-btn').addEventListener('click', stopPlayback);
+    document.getElementById('clear-btn').addEventListener('click', clearSet);
+    document.getElementById('complement-btn').addEventListener('click', getComplement);
+    document.getElementById('prime-btn').addEventListener('click', getPrimeForm);
+    document.getElementById('op-transpose').addEventListener('click', () => selectOperation('T'));
+    document.getElementById('op-invert').addEventListener('click', () => selectOperation('I'));
+    document.getElementById('op-retrograde').addEventListener('click', applyRetrograde);
+    document.querySelectorAll('.viz-mode-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.viz-mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentVisualization = btn.dataset.mode; animationProgress = 0; }); });
+    document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); tab.classList.add('active'); document.getElementById('tab-' + tab.dataset.tab).classList.add('active'); }); });
+    document.querySelectorAll('.modal-close').forEach(btn => { btn.addEventListener('click', () => hideModal(btn.dataset.close)); });
+    document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); }); });
+    document.addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT') return; if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active')); if (e.key === ' ') { e.preventDefault(); stopPlayback(); } });
+    // Panel toggle buttons
+    document.getElementById('left-toggle').addEventListener('click', () => { document.getElementById('left-panel').classList.toggle('collapsed'); setTimeout(() => { if (vizSketch) vizSketch.windowResized(); }, 350); });
+    document.getElementById('right-toggle').addEventListener('click', () => { document.getElementById('right-panel').classList.toggle('collapsed'); setTimeout(() => { if (vizSketch) vizSketch.windowResized(); }, 350); });
+}
+
+function setCurrentSet(pcs) { currentSet = pcs; animationProgress = 0; updateAnalysis(); updatePianoKeyboard(); updateTransformationGrids(); updateSubsetsPanel(); addToRecentSets(pcs); }
+function handlePitchInput() { setCurrentSet(new PitchClassSet(document.getElementById('pitch-input').value.trim() || [])); }
+function addToRecentSets(pcs) { if (!pcs || pcs.cardinality === 0) return; const pcsString = pcs.pitchClasses.join(','); recentSets = recentSets.filter(s => s.pitchClasses.join(',') !== pcsString); recentSets.unshift(pcs); recentSets = recentSets.slice(0, 10); updateRecentSetsDisplay(); }
+function updateRecentSetsDisplay() { const container = document.getElementById('recent-sets-list'); container.innerHTML = recentSets.map((pcs, i) => '<div class="recent-item" data-index="' + i + '"><span class="recent-item-pcs">{' + pcs.pitchClasses.join(', ') + '}</span><span class="recent-item-forte">' + (ForteClassification.getForteNumber(pcs) || '-') + '</span></div>').join(''); container.querySelectorAll('.recent-item').forEach(item => { item.addEventListener('click', () => { const idx = parseInt(item.dataset.index); document.getElementById('pitch-input').value = recentSets[idx].pitchClasses.join(' '); setCurrentSet(recentSets[idx]); }); }); }
+function updateAnalysis() { if (!currentSet || currentSet.cardinality === 0) { document.getElementById('analysis-prime').textContent = '-'; document.getElementById('analysis-forte').textContent = '-'; document.getElementById('analysis-iv').textContent = '-'; document.getElementById('analysis-card').textContent = '0'; document.getElementById('analysis-z').textContent = '-'; return; } document.getElementById('analysis-prime').textContent = '[' + currentSet.primeForm().join(',') + ']'; const forte = ForteClassification.getForteNumber(currentSet); document.getElementById('analysis-forte').textContent = forte || '-'; document.getElementById('analysis-iv').textContent = currentSet.intervalVectorString(); document.getElementById('analysis-card').textContent = currentSet.cardinality; document.getElementById('analysis-z').textContent = (forte ? ForteClassification.getZPartner(forte) : null) || 'None'; }
+function buildPianoKeyboard() { const container = document.getElementById('piano-keyboard'); const whiteKeys = [{pc:0,name:'C'},{pc:2,name:'D'},{pc:4,name:'E'},{pc:5,name:'F'},{pc:7,name:'G'},{pc:9,name:'A'},{pc:11,name:'B'}]; const blackKeys = [{pc:1,pos:1},{pc:3,pos:2},{pc:6,pos:4},{pc:8,pos:5},{pc:10,pos:6}]; container.innerHTML = whiteKeys.map(k => '<div class="piano-key white" data-pc="' + k.pc + '"><span class="key-label">' + k.name + '</span></div>').join(''); const containerWidth = container.offsetWidth || 280, whiteKeyWidth = containerWidth / 7; blackKeys.forEach(k => { const blackKey = document.createElement('div'); blackKey.className = 'piano-key black'; blackKey.dataset.pc = k.pc; blackKey.style.left = (k.pos * whiteKeyWidth) + 'px'; blackKey.innerHTML = '<span class="key-label">' + ['','C#','','D#','','','F#','','G#','','A#',''][k.pc] + '</span>'; container.appendChild(blackKey); }); container.querySelectorAll('.piano-key').forEach(key => { key.addEventListener('click', () => togglePitchClass(parseInt(key.dataset.pc))); }); }
+function updatePianoKeyboard() { const pcs = currentSet?.pitchClasses || []; document.querySelectorAll('.piano-key').forEach(key => { key.classList.toggle('active', pcs.includes(parseInt(key.dataset.pc))); }); }
+function buildTransformSelector() { const container = document.getElementById('transform-n-selector'); container.innerHTML = Array.from({ length: 12 }, (_, i) => '<button class="transform-n-btn" data-n="' + i + '">' + i + '</button>').join(''); container.querySelectorAll('.transform-n-btn').forEach(btn => { btn.addEventListener('click', () => applyTransform(parseInt(btn.dataset.n))); }); }
+function selectOperation(op) { selectedOperation = op; document.querySelectorAll('.op-btn').forEach(btn => btn.classList.remove('active')); document.getElementById(op === 'T' ? 'op-transpose' : 'op-invert').classList.add('active'); document.getElementById('transform-n-selector').classList.remove('hidden'); }
+function applyTransform(n) { if (!currentSet || currentSet.cardinality === 0) return; const newSet = selectedOperation === 'T' ? currentSet.transpose(n) : currentSet.invert(n); document.getElementById('pitch-input').value = newSet.pitchClasses.join(' '); setCurrentSet(newSet); document.querySelectorAll('.transform-n-btn').forEach(btn => { btn.classList.toggle('selected', parseInt(btn.dataset.n) === n); }); }
+function applyRetrograde() { if (!currentSet || currentSet.cardinality === 0) return; const reversed = [...currentSet.pitchClasses].reverse(); document.getElementById('pitch-input').value = reversed.join(' '); setCurrentSet(new PitchClassSet(reversed)); }
+function updateTransformationGrids() { if (!currentSet) return; ['transposition', 'inversion'].forEach(type => { const container = document.getElementById(type + '-grid'); container.innerHTML = ''; for (let n = 0; n < 12; n++) { const transformed = type === 'transposition' ? currentSet.transpose(n) : currentSet.invert(n); const div = document.createElement('div'); div.className = 'transform-mini'; const canvas = document.createElement('canvas'); canvas.width = 60; canvas.height = 60; div.appendChild(canvas); const label = document.createElement('span'); label.className = 'transform-mini-label'; label.textContent = (type === 'transposition' ? 'T' : 'I') + n; div.appendChild(label); div.addEventListener('click', () => { document.getElementById('pitch-input').value = transformed.pitchClasses.join(' '); setCurrentSet(transformed); }); container.appendChild(div); drawMiniClock(canvas, transformed.pitchClasses); } }); }
+function updateSubsetsPanel() { updateSubsetsList(); updateSupersetsList(); updateSimilarList(); }
+function updateSubsetsList() { const container = document.getElementById('subsets-list'); if (!currentSet || currentSet.cardinality < 3) { container.innerHTML = '<div class="subset-item" style="color: var(--text-muted)">No subsets</div>'; return; } const subsets = []; for (let size = currentSet.cardinality - 1; size >= 2; size--) subsets.push(...currentSet.findSubsets(size).slice(0, 5)); container.innerHTML = subsets.slice(0, 15).map(sub => '<div class="subset-item" data-pcs="' + sub.pitchClasses.join(',') + '"><span class="subset-pcs">{' + sub.pitchClasses.join(', ') + '}</span><span class="subset-forte">' + (ForteClassification.getForteNumber(sub) || '-') + '</span></div>').join(''); container.querySelectorAll('.subset-item').forEach(item => { item.addEventListener('click', () => { const pcs = item.dataset.pcs.split(',').map(Number); document.getElementById('pitch-input').value = pcs.join(' '); setCurrentSet(new PitchClassSet(pcs)); }); }); }
+function updateSupersetsList() { const container = document.getElementById('supersets-list'); if (!currentSet || currentSet.cardinality >= 11 || currentSet.cardinality === 0) { container.innerHTML = '<div class="subset-item" style="color: var(--text-muted)">No supersets</div>'; return; } const supersets = currentSet.findSupersets(currentSet.cardinality + 1).slice(0, 15); container.innerHTML = supersets.map(sup => '<div class="subset-item" data-pcs="' + sup.pitchClasses.join(',') + '"><span class="subset-pcs">{' + sup.pitchClasses.join(', ') + '}</span><span class="subset-forte">' + (ForteClassification.getForteNumber(sup) || '-') + '</span></div>').join(''); container.querySelectorAll('.subset-item').forEach(item => { item.addEventListener('click', () => { const pcs = item.dataset.pcs.split(',').map(Number); document.getElementById('pitch-input').value = pcs.join(' '); setCurrentSet(new PitchClassSet(pcs)); }); }); }
+function updateSimilarList() { const container = document.getElementById('similar-list'); if (!currentSet) { container.innerHTML = '<div class="subset-item" style="color: var(--text-muted)">No similar sets</div>'; return; } const forte = ForteClassification.getForteNumber(currentSet); if (!forte) { container.innerHTML = '<div class="subset-item" style="color: var(--text-muted)">No Forte number</div>'; return; } const similar = ForteClassification.findSimilarSets(forte); if (similar.length === 0) { container.innerHTML = '<div class="subset-item" style="color: var(--text-muted)">No Z-related sets</div>'; return; } container.innerHTML = similar.map(forteNum => '<div class="subset-item" data-forte="' + forteNum + '"><span class="subset-forte">' + forteNum + '</span><span class="subset-pcs">[' + ForteClassification.getSetFromForteNumber(forteNum).primeForm().join(',') + ']</span></div>').join(''); container.querySelectorAll('.subset-item').forEach(item => { item.addEventListener('click', () => { const pcs = ForteClassification.getSetFromForteNumber(item.dataset.forte); document.getElementById('pitch-input').value = pcs.pitchClasses.join(' '); setCurrentSet(pcs); }); }); }
+function buildForteDirectory() { const filterContainer = document.getElementById('forte-filter'); filterContainer.innerHTML = ''; for (let c = 2; c <= 10; c++) { const btn = document.createElement('button'); btn.className = 'forte-filter-btn' + (c === 3 ? ' active' : ''); btn.textContent = c + '-note'; btn.addEventListener('click', () => { document.querySelectorAll('.forte-filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); displayForteList(c); }); filterContainer.appendChild(btn); } displayForteList(3); }
+function displayForteList(cardinality) { const container = document.getElementById('forte-list'), sets = ForteClassification.getSetsByCardinality(cardinality); container.innerHTML = sets.map(({ forte, primeForm, iv }) => '<div class="forte-item" data-forte="' + forte + '"><span class="forte-number">' + forte + '</span><span class="forte-prime">[' + primeForm.join(',') + ']</span><span class="forte-iv">&lt;' + iv.join('') + '&gt;</span></div>').join(''); container.querySelectorAll('.forte-item').forEach(item => { item.addEventListener('click', () => { const pcs = ForteClassification.getSetFromForteNumber(item.dataset.forte); document.getElementById('pitch-input').value = pcs.pitchClasses.join(' '); setCurrentSet(pcs); hideModal('forte-modal'); }); }); }
+function buildMusicExamples() { const container = document.getElementById('examples-list'), examples = MusicExamples.getAll(); container.innerHTML = examples.map((ex, i) => '<div class="example-item" data-index="' + i + '"><div class="example-name">' + ex.name + '</div><div class="example-composer">' + ex.composer + ' - ' + ex.piece + '</div><div class="example-pcs">{' + ex.pitchClasses.join(', ') + '}</div></div>').join(''); container.querySelectorAll('.example-item').forEach(item => { item.addEventListener('click', () => { const ex = examples[parseInt(item.dataset.index)]; document.getElementById('pitch-input').value = ex.pitchClasses.join(' '); setCurrentSet(new PitchClassSet(ex.pitchClasses)); hideModal('examples-modal'); }); }); }
+
+// ============ GLOBAL FUNCTIONS (called from HTML onclick) ============
+function clearSet() { document.getElementById('pitch-input').value = ''; setCurrentSet(new PitchClassSet([])); }
+function getComplement() { if (!currentSet || currentSet.cardinality === 0) return; const complement = currentSet.complement(); document.getElementById('pitch-input').value = complement.pitchClasses.join(' '); setCurrentSet(complement); }
+function getPrimeForm() { if (!currentSet || currentSet.cardinality === 0) return; const primeForm = currentSet.primeForm(); document.getElementById('pitch-input').value = primeForm.join(' '); setCurrentSet(new PitchClassSet(primeForm)); }
+function playChord() { if (!currentSet || currentSet.cardinality === 0) return; audioEngine.playChord(currentSet); const btn = document.getElementById('play-chord-btn'); btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), audioEngine.settings.chordDuration); }
+function playArpeggiated() { if (!currentSet || currentSet.cardinality === 0) return; audioEngine.playArpeggiated(currentSet); const btn = document.getElementById('play-arp-btn'); btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), currentSet.cardinality * audioEngine.settings.arpeggioSpeed + 500); }
+function stopPlayback() { audioEngine.stop(); document.getElementById('play-chord-btn').classList.remove('playing'); document.getElementById('play-arp-btn').classList.remove('playing'); }
+function exportMIDI() { if (!currentSet || currentSet.cardinality === 0) { alert('Please enter a pitch class set first'); return; } const forte = ForteClassification.getForteNumber(currentSet) || 'pcs'; audioEngine.downloadMIDI(currentSet, forte + '-' + currentSet.pitchClasses.join('') + '.mid'); }
+function showModal(modalId) { document.getElementById(modalId).classList.add('active'); }
+function hideModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
+function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }
+</script>
+</body>
+</html>

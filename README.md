@@ -1,8 +1,14 @@
 # Set Theory Analysis
 
-A standalone GUI application for **Allen Forte Pitch Class Set Theory** analysis. This tool allows musicians, composers, and music theorists to explore, analyze, and aurally examine pitch class sets.
+A comprehensive **Allen Forte Pitch Class Set Theory** analysis tool. Available as both a desktop application and a browser-based web app. This tool allows musicians, composers, and music theorists to explore, analyze, and aurally examine pitch class sets.
 
 ## Quick Start
+
+### Option 1: Online Version (No Installation)
+
+Simply open `online/index.html` in any web browser. No installation required!
+
+### Option 2: Desktop Application
 
 ```bash
 # Install dependencies
@@ -17,13 +23,14 @@ python run_analysis.py
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Installation](#installation)
-3. [Features](#features)
-4. [User Interface Guide](#user-interface-guide)
-5. [Pitch Class Set Theory Basics](#pitch-class-set-theory-basics)
-6. [File Structure](#file-structure)
-7. [Architecture](#architecture)
-8. [Troubleshooting](#troubleshooting)
+2. [Online Version](#online-version)
+3. [Installation](#installation)
+4. [Features](#features)
+5. [User Interface Guide](#user-interface-guide)
+6. [Pitch Class Set Theory Basics](#pitch-class-set-theory-basics)
+7. [File Structure](#file-structure)
+8. [Architecture](#architecture)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -38,6 +45,44 @@ This application provides an interactive environment for working with **pitch cl
 - **Compare** sets and find relationships between them
 - **Play** sets through audio synthesis
 - **Export** sets to MIDI files
+
+---
+
+## Online Version
+
+The `online/` folder contains a fully self-contained, browser-based version of the Set Theory Analysis tool.
+
+### Features
+
+- **Zero installation** - just open `index.html` in any browser
+- **Interactive piano keyboard** for pitch class input
+- **Clock and graph visualizations** using p5.js
+- **Complete Forte directory** with all 208 set classes
+- **Audio playback** via Web Audio API
+- **MIDI export** directly from the browser
+- **Transformation explorer** showing all T/I operations
+- **Subset/superset finder** and Z-relation display
+
+### Usage
+
+```bash
+# Local use - just open the file
+open online/index.html
+
+# Or host on any web server
+# Works with GitHub Pages, Netlify, Vercel, etc.
+```
+
+### Comparison
+
+| Feature | Online | Desktop |
+|---------|--------|---------|
+| Installation | None | Python + PyQt6 |
+| Audio Quality | Basic synthesis | High-quality SoundFont |
+| Offline Use | Limited | Full |
+| Customization | Limited | Full settings |
+
+See `online/README.md` for complete documentation of the web version.
 
 ---
 
@@ -243,10 +288,16 @@ The **interval vector** counts how many of each interval class (1-6) appear in a
 SetTheoryAnalysis/
 ├── run_analysis.py              # Entry point - run this to start
 ├── README.md                    # This file
+├── requirements.txt             # Python dependencies
 │
 ├── pitch_class_set.py           # Core PitchClassSet class
 ├── forte_classification.py      # Forte number lookup and classification
+├── set_analysis.py              # SetAnalyzer class
 ├── music_examples.py            # Famous pitch class sets from music
+│
+├── online/                      # Browser-based version
+│   ├── index.html               # Self-contained web app
+│   └── README.md                # Online version documentation
 │
 └── gui/
     ├── __init__.py
