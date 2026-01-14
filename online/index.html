@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         :root {
             --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-tertiary: #1a1a24;
@@ -197,10 +198,228 @@
         <button class="audio-btn" id="play-chord-btn" title="Play as Chord"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg></button>
         <button class="audio-btn" id="play-arp-btn" title="Play Arpeggiated"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg></button>
         <button class="audio-btn" id="stop-btn" title="Stop"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg></button>
-        <select class="audio-engine-select" id="audio-engine-select"><option value="webaudio">Web Audio</option></select>
+        <select class="audio-engine-select" id="synth-type-select" title="Synth Type">
+            <option value="triangle">Triangle</option>
+            <option value="sine">Sine</option>
+            <option value="square">Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="fm">FM</option>
+            <option value="am">AM</option>
+            <option value="fat">Fat Saw</option>
+            <option value="pulse">Pulse</option>
+            <option value="duo">Duo</option>
+            <option value="pluck">Pluck</option>
+            <option value="strings">Strings</option>
+            <option value="piano">Piano</option>
+            <option value="metal">Metal</option>
+        </select>
+        <select class="audio-engine-select" id="synth-preset-select" title="Preset" style="max-width:100px;">
+            <option value="default">Default</option>
+        </select>
+        <button class="audio-btn" id="effects-btn" title="Effects" style="width:32px;height:32px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        <select class="audio-engine-select" id="audio-engine-select"><option value="webaudio">Web Audio</option><option value="supercollider">SuperCollider</option></select><button class="audio-btn" id="sc-setup-btn" title="SuperCollider Setup" style="width:32px;height:32px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
     </div>
     <div class="modal-overlay" id="forte-modal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Forte Directory</h2><button class="modal-close" data-close="forte-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content"><div class="forte-filter" id="forte-filter"></div><div class="forte-list" id="forte-list"></div></div></div></div>
+    <div class="modal-overlay" id="effects-modal"><div class="modal" style="max-width:450px;"><div class="modal-header"><h2 class="modal-title">Audio Effects</h2><button class="modal-close" data-close="effects-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content">
+        <div id="synth-controls" style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border-subtle);">
+            <label class="input-label" style="margin-bottom:12px;display:block;">Synth Parameters: <span id="synth-type-label" style="color:var(--accent-primary);">Triangle</span></label>
+            <div id="synth-params-container"></div>
+        </div>
+        <div style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><label class="input-label" style="margin:0;">Filter Cutoff</label><span id="filter-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-secondary);">2000 Hz</span></div>
+            <input type="range" id="filter-slider" min="100" max="8000" value="2000" style="width:100%;accent-color:var(--accent-primary);">
+            <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="op-btn filter-type-btn active" data-type="lowpass" style="flex:1;padding:8px;">Low</button>
+                <button class="op-btn filter-type-btn" data-type="highpass" style="flex:1;padding:8px;">High</button>
+                <button class="op-btn filter-type-btn" data-type="bandpass" style="flex:1;padding:8px;">Band</button>
+            </div>
+        </div>
+        <div style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><label class="input-label" style="margin:0;">Reverb</label><span id="reverb-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-secondary);">20%</span></div>
+            <input type="range" id="reverb-slider" min="0" max="100" value="20" style="width:100%;accent-color:var(--accent-primary);">
+        </div>
+        <div style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><label class="input-label" style="margin:0;">Delay</label><span id="delay-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-secondary);">0%</span></div>
+            <input type="range" id="delay-slider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent-primary);">
+        </div>
+        <div style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><label class="input-label" style="margin:0;">Chorus</label><span id="chorus-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-secondary);">0%</span></div>
+            <input type="range" id="chorus-slider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent-primary);">
+        </div>
+        <div style="margin-bottom:16px;">
+            <label class="input-label">Envelope (ADSR)</label>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;">
+                <div><label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px;">Attack</label><input type="number" id="env-a" value="0.02" min="0.001" max="2" step="0.01" class="pitch-input" style="padding:8px;font-size:12px;"></div>
+                <div><label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px;">Decay</label><input type="number" id="env-d" value="0.1" min="0.001" max="2" step="0.01" class="pitch-input" style="padding:8px;font-size:12px;"></div>
+                <div><label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px;">Sustain</label><input type="number" id="env-s" value="0.7" min="0" max="1" step="0.05" class="pitch-input" style="padding:8px;font-size:12px;"></div>
+                <div><label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:4px;">Release</label><input type="number" id="env-r" value="0.4" min="0.01" max="5" step="0.05" class="pitch-input" style="padding:8px;font-size:12px;"></div>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="applyEnvelope()" style="width:100%;">Apply Envelope</button>
+    </div></div></div>
     <div class="modal-overlay" id="examples-modal"><div class="modal"><div class="modal-header"><h2 class="modal-title">Music Examples</h2><button class="modal-close" data-close="examples-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content"><div class="example-list" id="examples-list"></div></div></div></div>
+    <div class="modal-overlay" id="sc-setup-modal"><div class="modal" style="max-width:800px;"><div class="modal-header"><h2 class="modal-title">SuperCollider Setup</h2><button class="modal-close" data-close="sc-setup-modal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-content">
+        <p style="margin-bottom:16px;color:var(--text-secondary);">To use SuperCollider as the audio engine, you need to run two scripts:</p>
+        <div style="margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="subset-title" style="margin:0;">1. SuperCollider Backend (run in SuperCollider IDE)</span>
+                <button class="btn btn-secondary" onclick="copyToClipboard('sc-code')" style="padding:6px 12px;font-size:11px;">Copy</button>
+            </div>
+            <pre id="sc-code" style="background:var(--bg-tertiary);padding:12px;border-radius:var(--radius-md);font-family:'JetBrains Mono',monospace;font-size:10px;max-height:300px;overflow:auto;white-space:pre;border:1px solid var(--border-subtle);">// Set Theory Analysis - SuperCollider Audio Backend
+// Execute this entire block in SuperCollider (Cmd+Enter / Ctrl+Enter)
+
+(
+s.waitForBoot({
+    
+    // Synth Definitions
+    SynthDef(\pcsTri, { |out=0, freq=440, amp=0.3, att=0.02, dec=0.1, sus=0.7, rel=0.3, gate=1|
+        var env = EnvGen.kr(Env.adsr(att, dec, sus, rel), gate, doneAction: 2);
+        var sig = LFTri.ar(freq) * env * amp;
+        Out.ar(out, sig ! 2);
+    }).add;
+    
+    SynthDef(\pcsSine, { |out=0, freq=440, amp=0.3, att=0.02, dec=0.1, sus=0.7, rel=0.3, gate=1|
+        var env = EnvGen.kr(Env.adsr(att, dec, sus, rel), gate, doneAction: 2);
+        var sig = SinOsc.ar(freq) * env * amp;
+        Out.ar(out, sig ! 2);
+    }).add;
+    
+    SynthDef(\pcsSaw, { |out=0, freq=440, amp=0.2, att=0.02, dec=0.1, sus=0.7, rel=0.3, gate=1|
+        var env = EnvGen.kr(Env.adsr(att, dec, sus, rel), gate, doneAction: 2);
+        var sig = LPF.ar(LFSaw.ar(freq), freq * 4) * env * amp;
+        Out.ar(out, sig ! 2);
+    }).add;
+    
+    SynthDef(\pcsSquare, { |out=0, freq=440, amp=0.2, att=0.02, dec=0.1, sus=0.7, rel=0.3, gate=1|
+        var env = EnvGen.kr(Env.adsr(att, dec, sus, rel), gate, doneAction: 2);
+        var sig = LPF.ar(LFPulse.ar(freq, width:0.5) * 2 - 1, freq * 3) * env * amp;
+        Out.ar(out, sig ! 2);
+    }).add;
+    
+    SynthDef(\pcsFM, { |out=0, freq=440, amp=0.3, att=0.01, dec=0.2, sus=0.4, rel=0.5, gate=1|
+        var env = EnvGen.kr(Env.adsr(att, dec, sus, rel), gate, doneAction: 2);
+        var modEnv = EnvGen.kr(Env.adsr(att, dec * 0.5, sus * 0.3, rel), gate);
+        var mod = SinOsc.ar(freq * 2) * freq * 3 * modEnv;
+        var sig = SinOsc.ar(freq + mod) * env * amp;
+        Out.ar(out, sig ! 2);
+    }).add;
+    
+    s.sync;
+    
+    // Engine State
+    ~pcsEngine = (
+        baseOctave: 4, velocity: 0.5, synthType: \pcsTri,
+        arpeggioSpeed: 0.15, chordDuration: 1.5,
+        activeNotes: List[], a4Freq: 440
+    );
+    
+    ~pcsEngine.pcToFreq = { |self, pc, octave|
+        self.a4Freq * (2 ** ((pc + ((octave + 1) * 12) - 69) / 12));
+    };
+    
+    ~pcsEngine.playNote = { |self, pc, duration=1, octave=nil|
+        var oct = octave ?? self.baseOctave;
+        var freq = self.pcToFreq(pc, oct);
+        var synth = Synth(self.synthType, [\freq, freq, \amp, self.velocity]);
+        self.activeNotes.add(synth);
+        SystemClock.sched(duration, { synth.set(\gate, 0); self.activeNotes.remove(synth); nil });
+        synth;
+    };
+    
+    ~pcsEngine.playChord = { |self, pitchClasses, duration=nil|
+        var dur = duration ?? self.chordDuration;
+        pitchClasses.do { |pc, i|
+            var octave = self.baseOctave + (if(pitchClasses.size > 4) { (i / 4).floor } { 0 });
+            self.playNote(pc, dur, octave);
+        };
+        "Playing chord: %".format(pitchClasses).postln;
+    };
+    
+    ~pcsEngine.playArpeggiated = { |self, pitchClasses, noteLength=nil|
+        var speed = noteLength ?? self.arpeggioSpeed;
+        pitchClasses.do { |pc, i|
+            var octave = self.baseOctave + (if(pitchClasses.size > 6) { (i / 6).floor } { 0 });
+            SystemClock.sched(i * speed, { self.playNote(pc, speed * 2, octave); nil });
+        };
+        "Playing arpeggio: %".format(pitchClasses).postln;
+    };
+    
+    ~pcsEngine.stop = { |self|
+        self.activeNotes.do { |synth| synth.set(\gate, 0) };
+        self.activeNotes.clear;
+        "Stopped".postln;
+    };
+    
+    // OSC Responders
+    OSCdef(\pcsChord, { |msg|
+        var pitchClasses = msg[1..msg.size-2].asArray;
+        var duration = msg.last;
+        if(duration.isNumber.not) { pitchClasses = msg[1..].asArray; duration = nil };
+        ~pcsEngine.playChord(pitchClasses.collect(_.asInteger), duration);
+    }, '/pcs/chord');
+    
+    OSCdef(\pcsArpeggio, { |msg|
+        var pitchClasses = msg[1..msg.size-2].asArray;
+        var noteLength = msg.last;
+        if(noteLength.isNumber.not) { pitchClasses = msg[1..].asArray; noteLength = nil };
+        ~pcsEngine.playArpeggiated(pitchClasses.collect(_.asInteger), noteLength);
+    }, '/pcs/arpeggio');
+    
+    OSCdef(\pcsStop, { |msg| ~pcsEngine.stop }, '/pcs/stop');
+    OSCdef(\pcsSynth, { |msg| ~pcsEngine.synthType = msg[1].asSymbol }, '/pcs/synth');
+    OSCdef(\pcsOctave, { |msg| ~pcsEngine.baseOctave = msg[1].asInteger }, '/pcs/octave');
+    OSCdef(\pcsVelocity, { |msg| ~pcsEngine.velocity = msg[1].asFloat.clip(0,1) }, '/pcs/velocity');
+    OSCdef(\pcsPing, { |msg| "PCS Engine ready".postln }, '/pcs/ping');
+    
+    "".postln;
+    "=== Set Theory SC Backend Ready ===".postln;
+    "OSC Port: %".format(NetAddr.langPort).postln;
+    "Test: ~pcsEngine.playChord([0, 4, 7]);".postln;
+});
+)</pre>
+        </div>
+        <div style="margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="subset-title" style="margin:0;">2. WebSocket-OSC Bridge (run in terminal: python3 bridge.py)</span>
+                <button class="btn btn-secondary" onclick="copyToClipboard('py-code')" style="padding:6px 12px;font-size:11px;">Copy</button>
+            </div>
+            <pre id="py-code" style="background:var(--bg-tertiary);padding:12px;border-radius:var(--radius-md);font-family:'JetBrains Mono',monospace;font-size:10px;max-height:200px;overflow:auto;white-space:pre;border:1px solid var(--border-subtle);">#!/usr/bin/env python3
+# WebSocket to OSC Bridge - pip install websockets python-osc
+import asyncio, json, websockets
+from pythonosc import udp_client
+
+WS_PORT, SC_PORT = 8765, 57120
+osc = None
+
+async def handle(ws, path=None):
+    global osc
+    if not osc: osc = udp_client.SimpleUDPClient("127.0.0.1", SC_PORT)
+    print(f"Client connected")
+    try:
+        async for msg in ws:
+            data = json.loads(msg)
+            osc.send_message(data.get('address',''), data.get('args',[]))
+            await ws.send(json.dumps({'status':'ok'}))
+    except: pass
+
+async def main():
+    print(f"Bridge running - WS:{WS_PORT} -> OSC:{SC_PORT}")
+    async with websockets.serve(handle, "localhost", WS_PORT):
+        await asyncio.Future()
+
+if __name__ == "__main__":
+    asyncio.run(main())</pre>
+        </div>
+        <div style="background:var(--bg-tertiary);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+            <div class="subset-title" style="margin-bottom:12px;">Quick Start</div>
+            <ol style="margin:0;padding-left:20px;color:var(--text-secondary);font-size:13px;line-height:1.8;">
+                <li>Copy the SuperCollider code and run it in SuperCollider IDE</li>
+                <li>Save the Python code as <code style="background:var(--bg-elevated);padding:2px 6px;border-radius:4px;">bridge.py</code> and run: <code style="background:var(--bg-elevated);padding:2px 6px;border-radius:4px;">pip install websockets python-osc && python3 bridge.py</code></li>
+                <li>Select "SuperCollider" from the audio engine dropdown</li>
+                <li>Click play to hear SC synthesis!</li>
+            </ol>
+        </div>
+    </div></div></div>
 <script>
 // ============ PITCH CLASS SET ============
 class PitchClassSet {
@@ -290,18 +509,423 @@ const ForteClassification = {
 // ============ MUSIC EXAMPLES ============
 const MusicExamples = { examples: [{name:"Major Triad",composer:"Traditional",piece:"3-11",pitchClasses:[0,4,7]},{name:"Minor Triad",composer:"Traditional",piece:"3-11",pitchClasses:[0,3,7]},{name:"Diminished Triad",composer:"Traditional",piece:"3-10",pitchClasses:[0,3,6]},{name:"Augmented Triad",composer:"Traditional",piece:"3-12",pitchClasses:[0,4,8]},{name:"Dominant 7th",composer:"Traditional",piece:"4-27",pitchClasses:[0,4,7,10]},{name:"Major 7th",composer:"Traditional",piece:"4-20",pitchClasses:[0,4,7,11]},{name:"Diminished 7th",composer:"Traditional",piece:"4-28",pitchClasses:[0,3,6,9]},{name:"Major Scale",composer:"Traditional",piece:"7-35",pitchClasses:[0,2,4,5,7,9,11]},{name:"Whole Tone",composer:"Debussy",piece:"6-35",pitchClasses:[0,2,4,6,8,10]},{name:"Octatonic",composer:"Stravinsky",piece:"8-28",pitchClasses:[0,1,3,4,6,7,9,10]},{name:"Pentatonic",composer:"Traditional",piece:"5-35",pitchClasses:[0,2,4,7,9]},{name:"Tristan Chord",composer:"Wagner",piece:"4-27",pitchClasses:[0,3,6,10]},{name:"Mystic Chord",composer:"Scriabin",piece:"6-34",pitchClasses:[0,2,4,6,9,10]},{name:"Viennese Trichord",composer:"Schoenberg",piece:"3-3",pitchClasses:[0,1,4]}], getAll() { return this.examples; } };
 
-// ============ AUDIO ENGINE ============
+// ============ AUDIO ENGINE (Tone.js) ============
 const audioEngine = {
-    audioContext: null, masterGain: null, activeOscillators: [], isPlaying: false,
-    settings: { baseOctave:4, velocity:0.5, attackTime:0.02, decayTime:0.1, sustainLevel:0.7, releaseTime:0.3, waveform:'triangle', arpeggioSpeed:150, chordDuration:1500, a4Frequency:440 },
-    async init() { if (!this.audioContext) { this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.audioContext.createGain(); this.masterGain.connect(this.audioContext.destination); this.masterGain.gain.value = this.settings.velocity; } if (this.audioContext.state === 'suspended') await this.audioContext.resume(); },
-    midiToFreq(midi) { return this.settings.a4Frequency * Math.pow(2, (midi - 69) / 12); },
-    createVoice(frequency, duration) { const osc = this.audioContext.createOscillator(), gain = this.audioContext.createGain(); osc.type = this.settings.waveform; osc.frequency.value = frequency; osc.connect(gain); gain.connect(this.masterGain); const now = this.audioContext.currentTime; gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(1, now + this.settings.attackTime); gain.gain.linearRampToValueAtTime(this.settings.sustainLevel, now + this.settings.attackTime + this.settings.decayTime); if (duration) { const releaseStart = now + duration - this.settings.releaseTime; gain.gain.setValueAtTime(this.settings.sustainLevel, releaseStart); gain.gain.linearRampToValueAtTime(0, releaseStart + this.settings.releaseTime); } return { osc, gain }; },
-    playChord(pcs, duration = null) { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; duration = duration || this.settings.chordDuration; this.init().then(() => { this.isPlaying = true; pitchClasses.forEach((pc, i) => { let octave = this.settings.baseOctave + (pitchClasses.length > 4 ? Math.floor(i / 4) : 0); const voice = this.createVoice(this.midiToFreq(pc + (octave + 1) * 12), duration / 1000); voice.osc.start(); voice.osc.stop(this.audioContext.currentTime + duration / 1000); this.activeOscillators.push(voice); }); setTimeout(() => { this.isPlaying = false; this.activeOscillators = []; }, duration + 100); }); },
-    playArpeggiated(pcs, noteLength = null) { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; noteLength = noteLength || this.settings.arpeggioSpeed; this.init().then(() => { this.isPlaying = true; pitchClasses.forEach((pc, i) => { setTimeout(() => { if (!this.isPlaying) return; let octave = this.settings.baseOctave + (pitchClasses.length > 6 ? Math.floor(i / 6) : 0); const voice = this.createVoice(this.midiToFreq(pc + (octave + 1) * 12), (noteLength * 2) / 1000); voice.osc.start(); voice.osc.stop(this.audioContext.currentTime + (noteLength * 2) / 1000); this.activeOscillators.push(voice); }, i * noteLength); }); setTimeout(() => { this.isPlaying = false; this.activeOscillators = []; }, pitchClasses.length * noteLength + noteLength * 2); }); },
-    stop() { this.isPlaying = false; const now = this.audioContext?.currentTime || 0; this.activeOscillators.forEach(voice => { try { voice.gain.gain.cancelScheduledValues(now); voice.gain.gain.setValueAtTime(voice.gain.gain.value, now); voice.gain.gain.linearRampToValueAtTime(0, now + 0.05); voice.osc.stop(now + 0.1); } catch (e) {} }); this.activeOscillators = []; },
+    initialized: false, synths: [], isPlaying: false,
+    effects: { reverb: null, delay: null, filter: null, chorus: null },
+    settings: {
+        baseOctave: 4, velocity: 0.6, arpeggioSpeed: 150, chordDuration: 1500, a4Frequency: 440,
+        synthType: 'triangle', // triangle, sine, square, sawtooth, fm, am, fat, pulse, pluck, strings, piano
+        envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.4 },
+        filterFreq: 2000, filterType: 'lowpass', // lowpass, highpass, bandpass
+        reverbWet: 0.2, delayWet: 0, delayTime: 0.25, chorusWet: 0,
+        // Synth-specific params
+        fm: { modulationIndex: 12, harmonicity: 3 },
+        am: { harmonicity: 3 },
+        fat: { count: 3, spread: 30 },
+        pulse: { width: 0.3 },
+        duo: { vibratoAmount: 0.5, vibratoRate: 5, harmonicity: 1.5 },
+        metal: { harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 },
+        pluck: { resonance: 0.96, dampening: 3000, release: 1.2 },
+        strings: { voices: 4, spread: 20, vibratoAmount: 0.3, vibratoRate: 5 },
+        piano: { velocitySens: 0.8, release: 0.8, harmonics: 3 }
+    },
+    async init() {
+        if (this.initialized) return;
+        await Tone.start();
+        // Create effects chain
+        this.effects.chorus = new Tone.Chorus(4, 2.5, 0.5).toDestination();
+        this.effects.reverb = new Tone.Reverb({ decay: 2.5, wet: this.settings.reverbWet }).connect(this.effects.chorus);
+        this.effects.delay = new Tone.FeedbackDelay(this.settings.delayTime, 0.3).connect(this.effects.reverb);
+        this.effects.filter = new Tone.Filter(this.settings.filterFreq, this.settings.filterType).connect(this.effects.delay);
+        this.effects.chorus.wet.value = this.settings.chorusWet;
+        this.effects.delay.wet.value = this.settings.delayWet;
+        this.initialized = true;
+    },
+    createSynth() {
+        const env = this.settings.envelope;
+        const s = this.settings;
+        let synth;
+        switch (this.settings.synthType) {
+            case 'fm':
+                synth = new Tone.FMSynth({ envelope: env, modulationIndex: s.fm.modulationIndex, harmonicity: s.fm.harmonicity, modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.3 } });
+                break;
+            case 'am':
+                synth = new Tone.AMSynth({ envelope: env, harmonicity: s.am.harmonicity });
+                break;
+            case 'fat':
+                synth = new Tone.Synth({ oscillator: { type: 'fatsawtooth', count: s.fat.count, spread: s.fat.spread }, envelope: env });
+                break;
+            case 'pulse':
+                synth = new Tone.Synth({ oscillator: { type: 'pulse', width: s.pulse.width }, envelope: env });
+                break;
+            case 'duo':
+                synth = new Tone.DuoSynth({ voice0: { envelope: env }, voice1: { envelope: env }, vibratoAmount: s.duo.vibratoAmount, vibratoRate: s.duo.vibratoRate, harmonicity: s.duo.harmonicity });
+                break;
+            case 'metal':
+                synth = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: env.decay + 0.3, release: env.release }, harmonicity: s.metal.harmonicity, modulationIndex: s.metal.modulationIndex, resonance: s.metal.resonance, octaves: s.metal.octaves });
+                break;
+            case 'pluck':
+                synth = new Tone.PluckSynth({ resonance: s.pluck.resonance, dampening: s.pluck.dampening, release: s.pluck.release });
+                break;
+            case 'strings':
+                // Layered synth for strings effect
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'fatsawtooth', count: s.strings.voices, spread: s.strings.spread },
+                    envelope: { attack: 0.1, decay: 0.3, sustain: 0.8, release: 0.8 }
+                });
+                // Add vibrato via LFO modulation
+                const vibrato = new Tone.Vibrato(s.strings.vibratoRate, s.strings.vibratoAmount);
+                synth.connect(vibrato);
+                vibrato.connect(this.effects.filter);
+                synth._vibrato = vibrato;
+                synth.volume.value = Tone.gainToDb(this.settings.velocity);
+                return synth;
+            case 'piano':
+                // Piano-like FM synthesis
+                synth = new Tone.Synth({
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: s.piano.release }
+                });
+                // Layer with harmonics
+                const piano2 = new Tone.Synth({
+                    oscillator: { type: 'sine', partialCount: s.piano.harmonics },
+                    envelope: { attack: 0.001, decay: 0.5, sustain: 0.1, release: s.piano.release * 1.2 }
+                });
+                piano2.volume.value = -6;
+                piano2.connect(this.effects.filter);
+                synth._layer = piano2;
+                synth._isLayered = true;
+                break;
+            default:
+                synth = new Tone.Synth({ oscillator: { type: this.settings.synthType }, envelope: env });
+        }
+        synth.connect(this.effects.filter);
+        synth.volume.value = Tone.gainToDb(this.settings.velocity);
+        return synth;
+    },
+    pcToFreq(pc, octave) {
+        const midi = pc + ((octave + 1) * 12);
+        return this.settings.a4Frequency * Math.pow(2, (midi - 69) / 12);
+    },
+    async playChord(pcs, duration = null) {
+        const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs;
+        const dur = (duration || this.settings.chordDuration) / 1000;
+        await this.init();
+        this.stop();
+        this.isPlaying = true;
+        pitchClasses.forEach((pc, i) => {
+            const octave = this.settings.baseOctave + (pitchClasses.length > 4 ? Math.floor(i / 4) : 0);
+            const freq = this.pcToFreq(pc, octave);
+            const synth = this.createSynth();
+            this.synths.push(synth);
+            if (this.settings.synthType === 'metal') {
+                synth.triggerAttackRelease(dur, Tone.now(), this.settings.velocity);
+            } else {
+                synth.triggerAttackRelease(freq, dur, Tone.now(), this.settings.velocity);
+                if (synth._isLayered && synth._layer) {
+                    synth._layer.triggerAttackRelease(freq * 2, dur, Tone.now(), this.settings.velocity * 0.5);
+                }
+            }
+        });
+        setTimeout(() => { this.isPlaying = false; }, (dur * 1000) + 100);
+    },
+    async playArpeggiated(pcs, noteLength = null) {
+        const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs;
+        const speed = (noteLength || this.settings.arpeggioSpeed) / 1000;
+        await this.init();
+        this.stop();
+        this.isPlaying = true;
+        const now = Tone.now();
+        pitchClasses.forEach((pc, i) => {
+            const octave = this.settings.baseOctave + (pitchClasses.length > 6 ? Math.floor(i / 6) : 0);
+            const freq = this.pcToFreq(pc, octave);
+            const synth = this.createSynth();
+            this.synths.push(synth);
+            if (this.settings.synthType === 'metal') {
+                synth.triggerAttackRelease(speed * 1.8, now + (i * speed), this.settings.velocity);
+            } else {
+                synth.triggerAttackRelease(freq, speed * 1.8, now + (i * speed), this.settings.velocity);
+                if (synth._isLayered && synth._layer) {
+                    synth._layer.triggerAttackRelease(freq * 2, speed * 1.8, now + (i * speed), this.settings.velocity * 0.5);
+                }
+            }
+        });
+        setTimeout(() => { this.isPlaying = false; }, pitchClasses.length * speed * 1000 + 500);
+    },
+    stop() {
+        this.isPlaying = false;
+        this.synths.forEach(s => { 
+            try { 
+                s.triggerRelease(); 
+                if (s._vibrato) s._vibrato.dispose();
+                if (s._layer) { s._layer.triggerRelease(); setTimeout(() => s._layer.dispose(), 500); }
+                setTimeout(() => s.dispose(), 500); 
+            } catch(e){} 
+        });
+        this.synths = [];
+    },
+    setSynthType(type) { this.settings.synthType = type; updateSynthControls(type); updatePresetDropdown(type); },
+    setEnvelope(att, dec, sus, rel) { this.settings.envelope = { attack: att, decay: dec, sustain: sus, release: rel }; },
+    setFilter(freq, type) {
+        this.settings.filterFreq = freq;
+        this.settings.filterType = type || this.settings.filterType;
+        if (this.effects.filter) { this.effects.filter.frequency.value = freq; this.effects.filter.type = this.settings.filterType; }
+    },
+    setReverb(wet) { this.settings.reverbWet = wet; if (this.effects.reverb) this.effects.reverb.wet.value = wet; },
+    setDelay(wet, time) {
+        this.settings.delayWet = wet;
+        if (time) this.settings.delayTime = time;
+        if (this.effects.delay) { this.effects.delay.wet.value = wet; if (time) this.effects.delay.delayTime.value = time; }
+    },
+    setChorus(wet) { this.settings.chorusWet = wet; if (this.effects.chorus) this.effects.chorus.wet.value = wet; },
+    setSynthParam(synth, param, value) { if (this.settings[synth]) this.settings[synth][param] = value; },
+    applyPreset(presetName) {
+        const synthType = this.settings.synthType;
+        const presets = synthPresets[synthType];
+        if (!presets || !presets[presetName]) return;
+        const preset = presets[presetName];
+        // Apply synth-specific params
+        if (preset.params && this.settings[synthType]) {
+            Object.assign(this.settings[synthType], preset.params);
+        }
+        // Apply envelope
+        if (preset.envelope) {
+            Object.assign(this.settings.envelope, preset.envelope);
+            document.getElementById('env-a').value = this.settings.envelope.attack;
+            document.getElementById('env-d').value = this.settings.envelope.decay;
+            document.getElementById('env-s').value = this.settings.envelope.sustain;
+            document.getElementById('env-r').value = this.settings.envelope.release;
+        }
+        // Apply effects
+        if (preset.effects) {
+            if (preset.effects.filter !== undefined) this.setFilter(preset.effects.filter);
+            if (preset.effects.reverb !== undefined) this.setReverb(preset.effects.reverb);
+            if (preset.effects.delay !== undefined) this.setDelay(preset.effects.delay);
+            if (preset.effects.chorus !== undefined) this.setChorus(preset.effects.chorus);
+            // Update UI
+            if (preset.effects.filter !== undefined) { document.getElementById('filter-slider').value = preset.effects.filter; document.getElementById('filter-val').textContent = preset.effects.filter + ' Hz'; }
+            if (preset.effects.reverb !== undefined) { document.getElementById('reverb-slider').value = preset.effects.reverb * 100; document.getElementById('reverb-val').textContent = Math.round(preset.effects.reverb * 100) + '%'; }
+            if (preset.effects.delay !== undefined) { document.getElementById('delay-slider').value = preset.effects.delay * 100; document.getElementById('delay-val').textContent = Math.round(preset.effects.delay * 100) + '%'; }
+            if (preset.effects.chorus !== undefined) { document.getElementById('chorus-slider').value = preset.effects.chorus * 100; document.getElementById('chorus-val').textContent = Math.round(preset.effects.chorus * 100) + '%'; }
+        }
+        updateSynthControls(synthType);
+    },
     downloadMIDI(pcs, filename = 'pitch-class-set.mid') { const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs; const tempo = 120, ticksPerBeat = 480, microsecondsPerBeat = Math.round(60000000 / tempo); const events = []; pitchClasses.forEach(pc => { const note = pc + (this.settings.baseOctave + 1) * 12; events.push({ type: 'noteOn', tick: 0, note, velocity: 100 }); events.push({ type: 'noteOff', tick: ticksPerBeat, note, velocity: 0 }); }); events.sort((a, b) => a.tick - b.tick); const toVLQ = (value) => { if (value === 0) return [0]; const bytes = []; bytes.unshift(value & 0x7F); let v = value >> 7; while (v > 0) { bytes.unshift((v & 0x7F) | 0x80); v >>= 7; } return bytes; }; const trackData = [0x00, 0xFF, 0x51, 0x03, (microsecondsPerBeat >> 16) & 0xFF, (microsecondsPerBeat >> 8) & 0xFF, microsecondsPerBeat & 0xFF]; let lastTick = 0; events.forEach(event => { trackData.push(...toVLQ(event.tick - lastTick)); lastTick = event.tick; trackData.push(event.type === 'noteOn' ? 0x90 : 0x80, event.note, event.type === 'noteOn' ? event.velocity : 0); }); trackData.push(0x00, 0xFF, 0x2F, 0x00); const header = new Uint8Array([0x4D, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0x01, 0xE0]); const track = new Uint8Array(8 + trackData.length); track.set([0x4D, 0x54, 0x72, 0x6B, (trackData.length >> 24) & 0xFF, (trackData.length >> 16) & 0xFF, (trackData.length >> 8) & 0xFF, trackData.length & 0xFF]); track.set(trackData, 8); const result = new Uint8Array(header.length + track.length); result.set(header, 0); result.set(track, header.length); const blob = new Blob([result], { type: 'audio/midi' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); }
 };
+
+// ============ SYNTH PRESETS ============
+const synthPresets = {
+    triangle: {
+        default: { name: 'Default', envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.4 } },
+        soft: { name: 'Soft Pad', envelope: { attack: 0.3, decay: 0.2, sustain: 0.8, release: 1.0 }, effects: { reverb: 0.4, chorus: 0.3 } },
+        plucky: { name: 'Plucky', envelope: { attack: 0.001, decay: 0.2, sustain: 0.1, release: 0.3 } }
+    },
+    sine: {
+        default: { name: 'Default', envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.4 } },
+        subBass: { name: 'Sub Bass', envelope: { attack: 0.01, decay: 0.1, sustain: 1.0, release: 0.2 }, effects: { filter: 200 } },
+        glass: { name: 'Glass', envelope: { attack: 0.001, decay: 0.4, sustain: 0.2, release: 0.8 }, effects: { reverb: 0.5 } }
+    },
+    square: {
+        default: { name: 'Default', envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.4 } },
+        chip: { name: '8-bit Chip', envelope: { attack: 0.001, decay: 0.1, sustain: 0.8, release: 0.1 }, effects: { filter: 4000 } },
+        hollow: { name: 'Hollow', envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 0.5 }, effects: { filter: 1200 } }
+    },
+    sawtooth: {
+        default: { name: 'Default', envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.4 } },
+        brass: { name: 'Brass', envelope: { attack: 0.08, decay: 0.2, sustain: 0.6, release: 0.3 }, effects: { filter: 3000 } },
+        lead: { name: 'Lead', envelope: { attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.2 }, effects: { filter: 5000, delay: 0.2 } }
+    },
+    fm: {
+        default: { name: 'Default', params: { modulationIndex: 12, harmonicity: 3 } },
+        electric: { name: 'Electric Piano', params: { modulationIndex: 8, harmonicity: 2 }, envelope: { attack: 0.001, decay: 0.4, sustain: 0.3, release: 0.8 }, effects: { reverb: 0.25 } },
+        bell: { name: 'Bell', params: { modulationIndex: 20, harmonicity: 5.5 }, envelope: { attack: 0.001, decay: 0.6, sustain: 0.1, release: 1.5 }, effects: { reverb: 0.4 } },
+        bass: { name: 'FM Bass', params: { modulationIndex: 6, harmonicity: 1 }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.3 }, effects: { filter: 800 } },
+        organ: { name: 'Organ', params: { modulationIndex: 2, harmonicity: 1 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.1 } }
+    },
+    am: {
+        default: { name: 'Default', params: { harmonicity: 3 } },
+        tremolo: { name: 'Tremolo', params: { harmonicity: 0.5 }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.7, release: 0.5 } },
+        bright: { name: 'Bright', params: { harmonicity: 4 }, envelope: { attack: 0.01, decay: 0.15, sustain: 0.6, release: 0.4 } }
+    },
+    fat: {
+        default: { name: 'Default', params: { count: 3, spread: 30 } },
+        supersaw: { name: 'Supersaw', params: { count: 7, spread: 40 }, effects: { chorus: 0.2 } },
+        warm: { name: 'Warm Pad', params: { count: 4, spread: 15 }, envelope: { attack: 0.4, decay: 0.3, sustain: 0.7, release: 1.2 }, effects: { reverb: 0.5, filter: 1500 } },
+        trance: { name: 'Trance Lead', params: { count: 5, spread: 25 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.3 }, effects: { delay: 0.3 } }
+    },
+    pulse: {
+        default: { name: 'Default', params: { width: 0.3 } },
+        thin: { name: 'Thin', params: { width: 0.1 }, effects: { filter: 3000 } },
+        wide: { name: 'Wide', params: { width: 0.5 } },
+        pwm: { name: 'PWM Style', params: { width: 0.25 }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.5 }, effects: { chorus: 0.4 } }
+    },
+    duo: {
+        default: { name: 'Default', params: { vibratoAmount: 0.5, vibratoRate: 5, harmonicity: 1.5 } },
+        fifth: { name: 'Fifth', params: { vibratoAmount: 0.2, vibratoRate: 4, harmonicity: 1.5 }, effects: { reverb: 0.3 } },
+        octave: { name: 'Octave', params: { vibratoAmount: 0.3, vibratoRate: 5, harmonicity: 2 } },
+        detune: { name: 'Detuned', params: { vibratoAmount: 0.6, vibratoRate: 6, harmonicity: 1.01 }, effects: { chorus: 0.3 } }
+    },
+    pluck: {
+        default: { name: 'Default', params: { resonance: 0.96, dampening: 3000, release: 1.2 } },
+        guitar: { name: 'Guitar', params: { resonance: 0.98, dampening: 4000, release: 1.5 }, effects: { reverb: 0.15 } },
+        harp: { name: 'Harp', params: { resonance: 0.99, dampening: 5000, release: 2.0 }, effects: { reverb: 0.4 } },
+        muted: { name: 'Muted', params: { resonance: 0.9, dampening: 1500, release: 0.5 } },
+        kalimba: { name: 'Kalimba', params: { resonance: 0.97, dampening: 6000, release: 1.8 }, effects: { reverb: 0.3, delay: 0.15 } },
+        koto: { name: 'Koto', params: { resonance: 0.95, dampening: 3500, release: 1.0 }, effects: { reverb: 0.25 } }
+    },
+    strings: {
+        default: { name: 'Default', params: { voices: 4, spread: 20, vibratoAmount: 0.3, vibratoRate: 5 } },
+        ensemble: { name: 'Ensemble', params: { voices: 6, spread: 30, vibratoAmount: 0.4, vibratoRate: 5.5 }, effects: { reverb: 0.5, chorus: 0.3 } },
+        solo: { name: 'Solo Violin', params: { voices: 2, spread: 5, vibratoAmount: 0.5, vibratoRate: 6 }, effects: { reverb: 0.3 } },
+        cello: { name: 'Cello', params: { voices: 3, spread: 15, vibratoAmount: 0.35, vibratoRate: 4 }, envelope: { attack: 0.15, decay: 0.3, sustain: 0.8, release: 0.6 }, effects: { reverb: 0.35, filter: 2500 } },
+        orchestral: { name: 'Orchestral', params: { voices: 8, spread: 40, vibratoAmount: 0.25, vibratoRate: 4.5 }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.75, release: 1.0 }, effects: { reverb: 0.6 } }
+    },
+    piano: {
+        default: { name: 'Default', params: { velocitySens: 0.8, release: 0.8, harmonics: 3 } },
+        bright: { name: 'Bright', params: { velocitySens: 0.9, release: 0.6, harmonics: 5 }, effects: { filter: 6000 } },
+        mellow: { name: 'Mellow', params: { velocitySens: 0.6, release: 1.2, harmonics: 2 }, effects: { filter: 2000, reverb: 0.4 } },
+        honkytonk: { name: 'Honky Tonk', params: { velocitySens: 0.85, release: 0.5, harmonics: 4 }, effects: { chorus: 0.4, filter: 4000 } },
+        electric: { name: 'Electric', params: { velocitySens: 0.75, release: 0.7, harmonics: 3 }, effects: { chorus: 0.2, delay: 0.15 } }
+    },
+    metal: {
+        default: { name: 'Default', params: { harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 } },
+        gong: { name: 'Gong', params: { harmonicity: 3, modulationIndex: 20, resonance: 2000, octaves: 2 }, envelope: { decay: 1.5, release: 2 }, effects: { reverb: 0.6 } },
+        bell: { name: 'Church Bell', params: { harmonicity: 8, modulationIndex: 40, resonance: 5000, octaves: 1 }, effects: { reverb: 0.5 } },
+        chime: { name: 'Wind Chime', params: { harmonicity: 12, modulationIndex: 15, resonance: 6000, octaves: 0.5 }, effects: { reverb: 0.4, delay: 0.2 } },
+        industrial: { name: 'Industrial', params: { harmonicity: 2, modulationIndex: 50, resonance: 3000, octaves: 2.5 } }
+    }
+};
+
+function updatePresetDropdown(synthType) {
+    const select = document.getElementById('synth-preset-select');
+    const presets = synthPresets[synthType] || { default: { name: 'Default' } };
+    select.innerHTML = Object.entries(presets).map(([key, p]) => 
+        `<option value="${key}">${p.name}</option>`
+    ).join('');
+    select.value = 'default';
+}
+
+// Synth-specific control definitions
+const synthParamDefs = {
+    triangle: [],
+    sine: [],
+    square: [],
+    sawtooth: [],
+    fm: [
+        { id: 'fm-modIndex', label: 'Mod Index', param: 'modulationIndex', min: 1, max: 50, step: 1, value: 12 },
+        { id: 'fm-harmonicity', label: 'Harmonicity', param: 'harmonicity', min: 0.5, max: 10, step: 0.5, value: 3 }
+    ],
+    am: [
+        { id: 'am-harmonicity', label: 'Harmonicity', param: 'harmonicity', min: 0.5, max: 10, step: 0.5, value: 3 }
+    ],
+    fat: [
+        { id: 'fat-count', label: 'Oscillators', param: 'count', min: 1, max: 8, step: 1, value: 3 },
+        { id: 'fat-spread', label: 'Spread (cents)', param: 'spread', min: 0, max: 100, step: 5, value: 30 }
+    ],
+    pulse: [
+        { id: 'pulse-width', label: 'Pulse Width', param: 'width', min: 0.05, max: 0.95, step: 0.05, value: 0.3 }
+    ],
+    duo: [
+        { id: 'duo-vibAmt', label: 'Vibrato Amount', param: 'vibratoAmount', min: 0, max: 1, step: 0.1, value: 0.5 },
+        { id: 'duo-vibRate', label: 'Vibrato Rate', param: 'vibratoRate', min: 0.5, max: 20, step: 0.5, value: 5 },
+        { id: 'duo-harmonicity', label: 'Harmonicity', param: 'harmonicity', min: 0.5, max: 4, step: 0.1, value: 1.5 }
+    ],
+    pluck: [
+        { id: 'pluck-resonance', label: 'Resonance', param: 'resonance', min: 0.8, max: 0.999, step: 0.01, value: 0.96 },
+        { id: 'pluck-dampening', label: 'Dampening', param: 'dampening', min: 500, max: 8000, step: 100, value: 3000 },
+        { id: 'pluck-release', label: 'Release', param: 'release', min: 0.3, max: 4, step: 0.1, value: 1.2 }
+    ],
+    strings: [
+        { id: 'strings-voices', label: 'Voices', param: 'voices', min: 2, max: 8, step: 1, value: 4 },
+        { id: 'strings-spread', label: 'Spread', param: 'spread', min: 5, max: 50, step: 5, value: 20 },
+        { id: 'strings-vibAmt', label: 'Vibrato Amount', param: 'vibratoAmount', min: 0, max: 1, step: 0.05, value: 0.3 },
+        { id: 'strings-vibRate', label: 'Vibrato Rate', param: 'vibratoRate', min: 1, max: 10, step: 0.5, value: 5 }
+    ],
+    piano: [
+        { id: 'piano-velSens', label: 'Velocity Sensitivity', param: 'velocitySens', min: 0.1, max: 1, step: 0.05, value: 0.8 },
+        { id: 'piano-release', label: 'Release', param: 'release', min: 0.3, max: 2, step: 0.1, value: 0.8 },
+        { id: 'piano-harmonics', label: 'Harmonics', param: 'harmonics', min: 1, max: 8, step: 1, value: 3 }
+    ],
+    metal: [
+        { id: 'metal-harmonicity', label: 'Harmonicity', param: 'harmonicity', min: 0.5, max: 15, step: 0.1, value: 5.1 },
+        { id: 'metal-modIndex', label: 'Mod Index', param: 'modulationIndex', min: 1, max: 100, step: 1, value: 32 },
+        { id: 'metal-resonance', label: 'Resonance', param: 'resonance', min: 100, max: 8000, step: 100, value: 4000 },
+        { id: 'metal-octaves', label: 'Octaves', param: 'octaves', min: 0.5, max: 4, step: 0.5, value: 1.5 }
+    ]
+};
+
+function updateSynthControls(synthType) {
+    const container = document.getElementById('synth-params-container');
+    const label = document.getElementById('synth-type-label');
+    const names = { triangle: 'Triangle', sine: 'Sine', square: 'Square', sawtooth: 'Sawtooth', fm: 'FM Synth', am: 'AM Synth', fat: 'Fat Saw', pulse: 'Pulse', duo: 'Duo Synth', pluck: 'Pluck', strings: 'Strings', piano: 'Piano', metal: 'Metal' };
+    label.textContent = names[synthType] || synthType;
+    
+    const params = synthParamDefs[synthType] || [];
+    if (params.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;font-style:italic;">No additional parameters for this synth.</p>';
+        return;
+    }
+    
+    container.innerHTML = params.map(p => {
+        const currentVal = audioEngine.settings[synthType]?.[p.param] ?? p.value;
+        return `<div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <label style="font-size:11px;color:var(--text-secondary);">${p.label}</label>
+                <span id="${p.id}-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-secondary);">${currentVal}</span>
+            </div>
+            <input type="range" id="${p.id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${currentVal}" 
+                   style="width:100%;accent-color:var(--accent-primary);"
+                   oninput="document.getElementById('${p.id}-val').textContent=this.value; audioEngine.setSynthParam('${synthType}','${p.param}',parseFloat(this.value));">
+        </div>`;
+    }).join('');
+}
+
+// ============ SUPERCOLLIDER ENGINE ============
+const scEngine = {
+    ws: null, connected: false, port: 8765,
+    settings: { baseOctave: 4, velocity: 0.5, synthType: 'pcsTri', arpeggioSpeed: 0.15, chordDuration: 1.5 },
+    connect() {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            try {
+                this.ws = new WebSocket('ws://localhost:' + this.port);
+                this.ws.onopen = () => { this.connected = true; console.log('SC Engine connected'); this.send('/pcs/ping'); resolve(); };
+                this.ws.onclose = () => { this.connected = false; console.log('SC Engine disconnected'); };
+                this.ws.onerror = () => { this.connected = false; reject(new Error('WebSocket connection failed')); };
+                this.ws.onmessage = (e) => { console.log('SC:', e.data); };
+                setTimeout(() => { if (!this.connected) { this.ws.close(); reject(new Error('Connection timeout')); } }, 2000);
+            } catch (e) { reject(e); }
+        });
+    },
+    send(address, ...args) { if (this.ws && this.connected) { this.ws.send(JSON.stringify({ address, args })); } },
+    showSetupPrompt() {
+        if (confirm('SuperCollider bridge not running.\n\nClick OK to view setup instructions, or Cancel to switch to Web Audio.')) {
+            showModal('sc-setup-modal');
+        } else {
+            document.getElementById('audio-engine-select').value = 'webaudio';
+        }
+    },
+    async playChord(pcs, duration = null) {
+        const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs;
+        const dur = duration || this.settings.chordDuration;
+        try { await this.connect(); this.send('/pcs/chord', ...pitchClasses, dur); }
+        catch (e) { console.error('SC playChord failed:', e.message); this.showSetupPrompt(); }
+    },
+    async playArpeggiated(pcs, noteLength = null) {
+        const pitchClasses = pcs instanceof PitchClassSet ? pcs.pitchClasses : pcs;
+        const speed = noteLength || this.settings.arpeggioSpeed;
+        try { await this.connect(); this.send('/pcs/arpeggio', ...pitchClasses, speed); }
+        catch (e) { console.error('SC playArpeggiated failed:', e.message); this.showSetupPrompt(); }
+    },
+    stop() { if (this.connected) this.send('/pcs/stop'); },
+    setSynthType(type) { this.settings.synthType = type; if (this.connected) this.send('/pcs/synth', type); },
+    setOctave(oct) { this.settings.baseOctave = oct; if (this.connected) this.send('/pcs/octave', oct); },
+    setVelocity(vel) { this.settings.velocity = vel; if (this.connected) this.send('/pcs/velocity', vel); }
+};
+
+// Get current audio engine based on dropdown selection
+function getAudioEngine() { return document.getElementById('audio-engine-select').value === 'supercollider' ? scEngine : audioEngine; }
 
 // ============ VISUALIZATION ============
 const pcColors = ['#ff6b6b','#ff8e6b','#ffb86b','#ffe66b','#d4ff6b','#8eff6b','#6bffa8','#6bfff0','#6bd4ff','#6b8eff','#a86bff','#ff6be6'];
@@ -362,7 +986,7 @@ function togglePitchClass(pc) {
 // ============ APPLICATION ============
 let recentSets = [], selectedOperation = null;
 
-document.addEventListener('DOMContentLoaded', () => { initVisualization(); buildPianoKeyboard(); buildTransformSelector(); buildForteDirectory(); buildMusicExamples(); setupEventListeners(); setCurrentSet(new PitchClassSet([0, 4, 7])); });
+document.addEventListener('DOMContentLoaded', () => { initVisualization(); buildPianoKeyboard(); buildTransformSelector(); buildForteDirectory(); buildMusicExamples(); setupEventListeners(); setCurrentSet(new PitchClassSet([0, 4, 7])); updateSynthControls('triangle'); updatePresetDropdown('triangle'); });
 
 function setupEventListeners() {
     const pitchInput = document.getElementById('pitch-input');
@@ -374,6 +998,7 @@ function setupEventListeners() {
     document.getElementById('play-chord-btn').addEventListener('click', playChord);
     document.getElementById('play-arp-btn').addEventListener('click', playArpeggiated);
     document.getElementById('stop-btn').addEventListener('click', stopPlayback);
+    document.getElementById('sc-setup-btn').addEventListener('click', () => showModal('sc-setup-modal'));
     document.getElementById('clear-btn').addEventListener('click', clearSet);
     document.getElementById('complement-btn').addEventListener('click', getComplement);
     document.getElementById('prime-btn').addEventListener('click', getPrimeForm);
@@ -388,6 +1013,17 @@ function setupEventListeners() {
     // Panel toggle buttons
     document.getElementById('left-toggle').addEventListener('click', () => { document.getElementById('left-panel').classList.toggle('collapsed'); setTimeout(() => { if (vizSketch) vizSketch.windowResized(); }, 350); });
     document.getElementById('right-toggle').addEventListener('click', () => { document.getElementById('right-panel').classList.toggle('collapsed'); setTimeout(() => { if (vizSketch) vizSketch.windowResized(); }, 350); });
+    // Synth type selector
+    document.getElementById('synth-type-select').addEventListener('change', (e) => { audioEngine.setSynthType(e.target.value); });
+    // Preset selector
+    document.getElementById('synth-preset-select').addEventListener('change', (e) => { audioEngine.applyPreset(e.target.value); });
+    // Effects modal
+    document.getElementById('effects-btn').addEventListener('click', () => showModal('effects-modal'));
+    document.getElementById('filter-slider').addEventListener('input', (e) => { const v = parseInt(e.target.value); document.getElementById('filter-val').textContent = v + ' Hz'; audioEngine.setFilter(v); });
+    document.getElementById('reverb-slider').addEventListener('input', (e) => { const v = parseInt(e.target.value); document.getElementById('reverb-val').textContent = v + '%'; audioEngine.setReverb(v / 100); });
+    document.getElementById('delay-slider').addEventListener('input', (e) => { const v = parseInt(e.target.value); document.getElementById('delay-val').textContent = v + '%'; audioEngine.setDelay(v / 100); });
+    document.getElementById('chorus-slider').addEventListener('input', (e) => { const v = parseInt(e.target.value); document.getElementById('chorus-val').textContent = v + '%'; audioEngine.setChorus(v / 100); });
+    document.querySelectorAll('.filter-type-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.filter-type-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); audioEngine.setFilter(audioEngine.settings.filterFreq, btn.dataset.type); }); });
 }
 
 function setCurrentSet(pcs) { currentSet = pcs; animationProgress = 0; updateAnalysis(); updatePianoKeyboard(); updateTransformationGrids(); updateSubsetsPanel(); addToRecentSets(pcs); }
@@ -414,12 +1050,14 @@ function buildMusicExamples() { const container = document.getElementById('examp
 function clearSet() { document.getElementById('pitch-input').value = ''; setCurrentSet(new PitchClassSet([])); }
 function getComplement() { if (!currentSet || currentSet.cardinality === 0) return; const complement = currentSet.complement(); document.getElementById('pitch-input').value = complement.pitchClasses.join(' '); setCurrentSet(complement); }
 function getPrimeForm() { if (!currentSet || currentSet.cardinality === 0) return; const primeForm = currentSet.primeForm(); document.getElementById('pitch-input').value = primeForm.join(' '); setCurrentSet(new PitchClassSet(primeForm)); }
-function playChord() { if (!currentSet || currentSet.cardinality === 0) return; audioEngine.playChord(currentSet); const btn = document.getElementById('play-chord-btn'); btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), audioEngine.settings.chordDuration); }
-function playArpeggiated() { if (!currentSet || currentSet.cardinality === 0) return; audioEngine.playArpeggiated(currentSet); const btn = document.getElementById('play-arp-btn'); btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), currentSet.cardinality * audioEngine.settings.arpeggioSpeed + 500); }
-function stopPlayback() { audioEngine.stop(); document.getElementById('play-chord-btn').classList.remove('playing'); document.getElementById('play-arp-btn').classList.remove('playing'); }
+function playChord() { if (!currentSet || currentSet.cardinality === 0) return; const engine = getAudioEngine(); engine.playChord(currentSet); const btn = document.getElementById('play-chord-btn'); btn.classList.add('playing'); setTimeout(() => btn.classList.remove('playing'), engine.settings.chordDuration * (engine === scEngine ? 1000 : 1)); }
+function playArpeggiated() { if (!currentSet || currentSet.cardinality === 0) return; const engine = getAudioEngine(); engine.playArpeggiated(currentSet); const btn = document.getElementById('play-arp-btn'); btn.classList.add('playing'); const speed = engine === scEngine ? engine.settings.arpeggioSpeed * 1000 : engine.settings.arpeggioSpeed; setTimeout(() => btn.classList.remove('playing'), currentSet.cardinality * speed + 500); }
+function stopPlayback() { getAudioEngine().stop(); document.getElementById('play-chord-btn').classList.remove('playing'); document.getElementById('play-arp-btn').classList.remove('playing'); }
 function exportMIDI() { if (!currentSet || currentSet.cardinality === 0) { alert('Please enter a pitch class set first'); return; } const forte = ForteClassification.getForteNumber(currentSet) || 'pcs'; audioEngine.downloadMIDI(currentSet, forte + '-' + currentSet.pitchClasses.join('') + '.mid'); }
 function showModal(modalId) { document.getElementById(modalId).classList.add('active'); }
 function hideModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
+function copyToClipboard(elementId) { const el = document.getElementById(elementId); const text = el.textContent; navigator.clipboard.writeText(text).then(() => { const btn = el.previousElementSibling.querySelector('button'); const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 1500); }).catch(err => console.error('Copy failed:', err)); }
+function applyEnvelope() { const a = parseFloat(document.getElementById('env-a').value) || 0.02; const d = parseFloat(document.getElementById('env-d').value) || 0.1; const s = parseFloat(document.getElementById('env-s').value) || 0.7; const r = parseFloat(document.getElementById('env-r').value) || 0.4; audioEngine.setEnvelope(a, d, s, r); hideModal('effects-modal'); }
 function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }
 </script>
 </body>
